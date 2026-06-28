@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8" />
@@ -61,8 +60,8 @@
 
 <form id="poem-form" style="display:none">
 
-<label>الشاعر</label>
-<select id="poet-select"></select>
+  <label>الشاعر</label>
+  <select id="poet-select"></select>
 
   <div class="new-poet-fields" id="new-poet-fields">
     <label>اسم الشاعر الجديد</label>
@@ -78,22 +77,19 @@
     <label>عنوان القصيدة</label>
     <input type="text" id="poem-title" />
 
-```
-<div class="row">
-  <div>
-    <label>البحر / الوزن (اختياري)</label>
-    <input type="text" id="poem-meter" />
-  </div>
-  <div>
-    <label>التاريخ (اختياري)</label>
-    <input type="text" id="poem-date" />
-  </div>
-</div>
+    <div class="row">
+      <div>
+        <label>البحر / الوزن (اختياري)</label>
+        <input type="text" id="poem-meter" />
+      </div>
+      <div>
+        <label>التاريخ (اختياري)</label>
+        <input type="text" id="poem-date" />
+      </div>
+    </div>
 
-<label>المصدر (اختياري — تويتر، اسم الموقع...)</label>
-<input type="text" id="poem-source" />
-```
-
+    <label>المصدر (اختياري — تويتر، اسم الموقع...)</label>
+    <input type="text" id="poem-source" />
   </fieldset>
 
   <fieldset>
@@ -243,6 +239,5 @@ function copyOutput() {
 
 init();
 </script>
-
 </body>
 </html>
