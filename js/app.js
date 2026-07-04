@@ -52,7 +52,7 @@ async function init() {
   el.footerYear.textContent = new Date().getFullYear();
 
   try {
-    const res = await fetch("/data/diwan.json");
+    const res = await fetch("data/diwan.json");
     if (!res.ok) throw new Error("HTTP " + res.status);
     state.data = await res.json();
   } catch (err) {
