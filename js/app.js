@@ -1,13 +1,13 @@
 /* ====================================================
-ديوان آل السويلم — المنطق
-==================================================== */
+   ديوان آل السويلم — المنطق
+   ==================================================== */
 
 const WASM_ICONS = {
-"wasm-1": `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"> <line x1="20" y1="6" x2="20" y2="34" /> <line x1="11" y1="11" x2="29" y2="11" /> </svg>`,
-"wasm-2": `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"> <circle cx="20" cy="20" r="9" /> <line x1="5" y1="20" x2="35" y2="20" /> </svg>`,
-"wasm-3": `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"> <line x1="9" y1="9" x2="31" y2="31" /> <line x1="9" y1="31" x2="31" y2="9" /> <circle cx="20" cy="20" r="3.2" fill="currentColor" stroke="none" /> </svg>`,
-"wasm-4": `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"> <polygon points="20,7 33,30 7,30" /> </svg>`,
-"wasm-5": `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"> <polyline points="6,28 14,12 20,28 26,12 34,28" /> </svg>`
+  "wasm-1": `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"> <line x1="20" y1="6" x2="20" y2="34" /> <line x1="11" y1="11" x2="29" y2="11" /> </svg>`,
+  "wasm-2": `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"> <circle cx="20" cy="20" r="9" /> <line x1="5" y1="20" x2="35" y2="20" /> </svg>`,
+  "wasm-3": `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"> <line x1="9" y1="9" x2="31" y2="31" /> <line x1="9" y1="31" x2="31" y2="9" /> <circle cx="20" cy="20" r="3.2" fill="currentColor" stroke="none" /> </svg>`,
+  "wasm-4": `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"> <polygon points="20,7 33,30 7,30" /> </svg>`,
+  "wasm-5": `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"> <polyline points="6,28 14,12 20,28 26,12 34,28" /> </svg>`
 };
 
 function wasmIcon(wasmId, extraStyle) {
@@ -77,6 +77,13 @@ function renderFilterPills() {
 
 function bindGlobalEvents() {
   document.addEventListener("click", (e) => {
+    // زر الانتقال لقصيدة مرتبطة (مجاراة)
+    const mujaratBtn = e.target.closest(".mujarat-goto");
+    if (mujaratBtn) {
+      location.hash = `poem=${mujaratBtn.dataset.poemId}`;
+      return;
+    }
+
     const pill = e.target.closest("[data-poet]");
     if (pill) {
       location.hash = pill.dataset.poet === "all" ? "" : `poet=${pill.dataset.poet}`;
@@ -119,6 +126,10 @@ function getAllPoemsFlat() {
   return out;
 }
 
+function findPoem(poemId) {
+  return getAllPoemsFlat().find(({ poem }) => poem.id === poemId) || null;
+}
+
 function renderGridView() {
   el.poemDetail.classList.add("hidden");
   el.poemsGrid.classList.remove("hidden");
@@ -144,13 +155,19 @@ function renderGridView() {
     return;
   }
 
-  const cards = items.map(({ poet, poem }) =>
-    `<article class="poem-card" data-poem="${poem.id}" tabindex="0" role="button">
-      <div class="poem-card-tag">${wasmIcon(poet.wasm, "width:14px;height:14px;")} ${poet.name}</div>
+  const cards = items.map(({ poet, poem }) => {
+    const mujaratBadge = poem.mujarat
+      ? `<span class="mujarat-badge">مجاراة</span>`
+      : "";
+    return `<article class="poem-card" data-poem="${poem.id}" tabindex="0" role="button">
+      <div class="poem-card-tag">
+        ${wasmIcon(poet.wasm, "width:14px;height:14px;")} ${poet.name}
+        ${mujaratBadge}
+      </div>
       <h3>${poem.title}</h3>
       <p>${poem.verses[0] ? poem.verses[0].sadr : ""}</p>
-    </article>`
-  ).join("");
+    </article>`;
+  }).join("");
 
   el.poemsGrid.innerHTML = bioBanner + cards;
 }
@@ -169,7 +186,7 @@ function renderBioBanner() {
 }
 
 function showPoem(poemId) {
-  const found = getAllPoemsFlat().find(({ poem }) => poem.id === poemId);
+  const found = findPoem(poemId);
   if (!found) {
     handleRoute();
     return;
@@ -189,6 +206,40 @@ function showPoem(poemId) {
     </div>`
   ).join("");
 
+  // قسم المجاراة — هذه القصيدة ردٌّ على قصيدة أخرى
+  let mujaratSection = "";
+  if (poem.mujarat) {
+    const m = poem.mujarat;
+    const targetLink = m.respondingToId
+      ? `<button class="mujarat-goto" data-poem-id="${m.respondingToId}">
+           اقرأ القصيدة الأصلية: ${m.respondingToTitle} ←
+         </button>`
+      : `<span style="color:var(--text-muted)">${m.respondingToTitle}</span>`;
+    mujaratSection = `
+      <div class="mujarat-section">
+        <span class="mujarat-label">مجاراةٌ لـ ${m.respondingToPoet}</span>
+        ${targetLink}
+      </div>`;
+  }
+
+  // قصائد تجاري هذه القصيدة
+  const responses = getAllPoemsFlat().filter(
+    ({ poem: p }) => p.mujarat && p.mujarat.respondingToId === poemId
+  );
+  let responsesSection = "";
+  if (responses.length > 0) {
+    const links = responses.map(({ poet: rPoet, poem: rPoem }) =>
+      `<button class="mujarat-goto" data-poem-id="${rPoem.id}">
+        ${wasmIcon(rPoet.wasm, "width:13px;height:13px;")} ${rPoet.name} — ${rPoem.title}
+       </button>`
+    ).join("");
+    responsesSection = `
+      <div class="mujarat-section" style="margin-top:10px">
+        <span class="mujarat-label">ردود ومجاراات على هذه القصيدة</span>
+        <div class="mujarat-responses">${links}</div>
+      </div>`;
+  }
+
   el.poemDetail.innerHTML = `
     <button class="back-btn" data-return-to="${poet.id}">→ الرجوع إلى قصائد ${poet.name}</button>
     <div class="poem-header">
@@ -196,5 +247,7 @@ function showPoem(poemId) {
       <h2>${poem.title}</h2>
       <div class="poem-meta">${poet.name}${poem.date ? " · " + poem.date : ""}${poem.meter ? " · " + poem.meter : ""}</div>
     </div>
-    <div class="verses">${versesHtml}</div>`;
+    ${mujaratSection}
+    <div class="verses">${versesHtml}</div>
+    ${responsesSection}`;
 }
