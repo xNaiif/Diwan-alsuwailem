@@ -130,10 +130,10 @@ legend{padding:0 6px;color:var(--gold);font-size:.9rem}
 </form>
 
 <div id="output-wrap">
-  <p class="hint">انسخ النص كامل ← روح لملف <b>data/diwan.json</b> بمستودعك ← احذف المحتوى القديم كله ← الصق ← Commit changes.</p>
-  <textarea id="output" readonly></textarea>
-  <div style="display:flex;gap:10px;margin-top:8px">
-    <button class="primary" onclick="copyOutput()">نسخ الكل</button>
+  <p id="output-instructions" class="hint" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;line-height:1.8"></p>
+  <textarea id="output" readonly style="min-height:260px;margin-top:10px"></textarea>
+  <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
+    <button class="primary" onclick="copyOutput()">نسخ الكود</button>
     <button onclick="resetForm()">إضافة قصيدة أخرى</button>
   </div>
   <p id="copy-status" class="hint"></p>
@@ -279,21 +279,19 @@ function generateOutput() {
   const verses = getVerses();
   if (!verses.length) { alert("لازم تضيف بيت واحد على الأقل."); return; }
 
-  const copy = JSON.parse(JSON.stringify(diwan));
   let poet;
+  let poetName = "";
   if (poetSel === "__new__") {
-    const name = document.getElementById("new-poet-name").value.trim();
-    if (!name) { alert("لازم تكتب اسم الشاعر الجديد."); return; }
-    poet = { id: "poet-" + (copy.poets.length + 1), name,
-              wasm: document.getElementById("new-poet-wasm").value,
-              bio: document.getElementById("new-poet-bio").value.trim(), poems: [] };
-    copy.poets.push(poet);
+    alert("لإضافة شاعر جديد، أضفه يدوياً في diwan.json أولاً ثم افتح الأداة من جديد.");
+    return;
   } else {
-    poet = copy.poets.find(p => p.id === poetSel);
+    poet = diwan.poets.find(p => p.id === poetSel);
+    poetName = poet.name;
   }
 
+  const newId = poet.id + "-poem-" + (poet.poems.length + 1);
   const newPoem = {
-    id: poet.id + "-poem-" + (poet.poems.length + 1),
+    id: newId,
     title,
     meter: "",
     date: document.getElementById("poem-date").value.trim(),
@@ -309,10 +307,19 @@ function generateOutput() {
     };
   }
 
-  poet.poems.push(newPoem);
-  diwan = JSON.parse(JSON.stringify(copy));
+  // ناتج: كود القصيدة فقط (snippet) للصق في diwan.json
+  const snippet = JSON.stringify(newPoem, null, 2);
+  const lastPoem = poet.poems[poet.poems.length - 1];
+  const lastTitle = lastPoem ? lastPoem.title : "—";
 
-  document.getElementById("output").value = JSON.stringify(copy, null, 2);
+  document.getElementById("output").value = snippet;
+  document.getElementById("output-instructions").innerHTML =
+    `<b>الشاعر:</b> ${poetName} &nbsp;|&nbsp; <b>معرّف القصيدة الجديدة:</b> ${newId}<br>
+     <b>مكان اللصق:</b> افتح <code>data/diwan.json</code> ← ابحث عن <code>"${lastPoem ? lastPoem.id : ''}"</code> (آخر قصيدة لهذا الشاعر) ← بعد الـ <code>}</code> الأخيرة لها أضف فاصلة <code>,</code> ثم الصق الكود.`;
+
+  // احفظ القصيدة في الذاكرة عشان العد يكون صح للقصيدة التالية
+  diwan.poets.find(p => p.id === poetSel).poems.push(newPoem);
+
   document.getElementById("output-wrap").style.display = "block";
   document.getElementById("output-wrap").scrollIntoView({ behavior: "smooth" });
 }
