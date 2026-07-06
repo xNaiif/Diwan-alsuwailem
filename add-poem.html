@@ -5,54 +5,53 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>إضافة قصيدة — ديوان آل السويلم</title>
 <style>
-  :root{
-    --bg:#15110d; --surface:#211a13; --surface-2:#2a2118;
-    --ember:#d9803f; --gold:#c9a227; --sage:#6f9a78;
-    --text:#ede3d3; --text-muted:#b7a890; --border:rgba(201,162,39,.18);
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0; background:var(--bg); color:var(--text);
-    font-family:system-ui,"IBM Plex Sans Arabic",sans-serif;
-    line-height:1.6; padding:20px; max-width:680px; margin-inline:auto;
-  }
-  h1{font-size:1.4rem; margin-bottom:4px}
-  p.hint{color:var(--text-muted); font-size:.85rem; margin-top:0}
-  label{display:block; margin:16px 0 6px; font-size:.9rem; color:var(--text-muted)}
-  input[type=text], select, textarea{
-    width:100%; background:var(--surface); border:1px solid var(--border);
-    color:var(--text); border-radius:8px; padding:10px; font-size:.95rem; font-family:inherit;
-  }
-  textarea{min-height:90px; resize:vertical}
-  button{
-    font-family:inherit; cursor:pointer; border-radius:8px; border:1px solid var(--border);
-    background:var(--surface-2); color:var(--text); padding:10px 16px; font-size:.9rem;
-  }
-  button.primary{background:var(--ember); color:#1a120b; border-color:var(--ember); font-weight:600}
-  .verse-row{display:flex; gap:8px; margin-bottom:8px; align-items:center}
-  .verse-row input{flex:1}
-  .verse-row button{flex:0 0 auto; padding:8px 10px}
-  fieldset{border:1px solid var(--border); border-radius:10px; padding:14px; margin-top:18px}
-  legend{padding:0 6px; color:var(--gold); font-size:.9rem}
-  #status{font-size:.85rem; color:var(--text-muted); margin-top:8px}
-  #output-wrap{display:none; margin-top:24px}
-  #output{width:100%; min-height:240px; font-family:monospace; font-size:.78rem; direction:ltr; text-align:left}
-  .row{display:flex; gap:10px}
-  .row > *{flex:1}
-  .new-poet-fields{display:none; border-top:1px dashed var(--border); margin-top:10px; padding-top:10px}
+:root{
+  --bg:#15110d; --surface:#211a13; --surface-2:#2a2118;
+  --ember:#d9803f; --gold:#c9a227; --sage:#6f9a78;
+  --text:#ede3d3; --text-muted:#b7a890; --text-faint:#8a7a64;
+  --border:rgba(201,162,39,.18);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,"IBM Plex Sans Arabic",sans-serif;line-height:1.6;padding:20px;max-width:700px;margin-inline:auto;}
+h1{font-size:1.4rem;margin-bottom:4px}
+p.hint{color:var(--text-muted);font-size:.85rem;margin-top:0}
+label{display:block;margin:16px 0 6px;font-size:.9rem;color:var(--text-muted)}
+input[type=text],select,textarea{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px;font-size:.95rem;font-family:inherit;}
+textarea{min-height:90px;resize:vertical}
+button{font-family:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);padding:10px 16px;font-size:.9rem;}
+button.primary{background:var(--ember);color:#1a120b;border-color:var(--ember);font-weight:600}
+button.sage{background:var(--sage);color:#0d1a0f;border-color:var(--sage);font-weight:600}
+.verse-row{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start}
+.verse-row input{flex:1}
+.verse-row button{flex:0 0 auto;padding:8px 10px;margin-top:2px}
+.verse-num{flex:0 0 auto;color:var(--text-faint);font-size:.8rem;padding-top:12px;min-width:22px;text-align:center}
+fieldset{border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:18px}
+legend{padding:0 6px;color:var(--gold);font-size:.9rem}
+#output-wrap{display:none;margin-top:24px}
+#output{width:100%;min-height:200px;font-family:monospace;font-size:.78rem;direction:ltr;text-align:left}
+.row{display:flex;gap:10px}
+.row>*{flex:1}
+.new-poet-fields{display:none;border-top:1px dashed var(--border);margin-top:10px;padding-top:10px}
+.mujarat-fields{display:none;margin-top:12px;padding:12px;background:rgba(201,162,39,.05);border:1px dashed var(--border);border-radius:8px}
+.mode-tabs{display:flex;margin-bottom:12px}
+.mode-tab{flex:1;padding:10px;text-align:center;background:var(--surface);border:1px solid var(--border);cursor:pointer;font-family:inherit;color:var(--text-muted);font-size:.92rem;}
+.mode-tab:first-child{border-radius:8px 0 0 8px}
+.mode-tab:last-child{border-radius:0 8px 8px 0;border-right:1px solid var(--border)}
+.mode-tab.active{background:var(--ember);color:#1a120b;border-color:var(--ember);font-weight:600}
+.mode-panel{display:none}
+.mode-panel.active{display:block}
+.paste-area{min-height:240px;font-family:"Aref Ruqaa",serif;font-size:1.05rem;line-height:2.2}
 </style>
 </head>
 <body>
 
 <h1>إضافة قصيدة جديدة</h1>
-<p class="hint">أداة مساعدة فقط — تبني لك ملف البيانات بالشكل الصحيح. آخر خطوة تنسخ النتيجة وتلصقها بنفسك في data/diwan.json بمستودع جيت‌هب.</p>
+<p class="hint">أداة مساعدة — تبني لك ملف البيانات جاهزاً للصق في data/diwan.json بجيت‌هب.</p>
 
 <div id="loader">
   <p id="status">يحمّل بيانات الديوان الحالية…</p>
   <div id="manual-load" style="display:none">
-    <label>تعذّر التحميل التلقائي (لازم تفتح هذا الملف من رابط الموقع نفسه، مثل
-      https://xnaiif.github.io/Diwan-alsuwailem/add-poem.html) — أو الصق محتوى
-      data/diwan.json الحالي هنا:</label>
+    <label>تعذّر التحميل التلقائي — افتح هذا الرابط من موقع الديوان المنشور مباشرة، أو الصق محتوى data/diwan.json هنا:</label>
     <textarea id="manual-json" placeholder="الصق محتوى ملف diwan.json كامل هنا"></textarea>
     <button class="primary" onclick="loadManual()">تحميل</button>
   </div>
@@ -62,41 +61,67 @@
 
   <label>الشاعر</label>
   <select id="poet-select"></select>
-
   <div class="new-poet-fields" id="new-poet-fields">
     <label>اسم الشاعر الجديد</label>
-    <input type="text" id="new-poet-name" placeholder="مثال: سعد السويلم" />
+    <input type="text" id="new-poet-name" placeholder="مثال: ضيف الله السويلم" />
     <label>نبذة مختصرة (اختياري)</label>
     <textarea id="new-poet-bio"></textarea>
-    <label>الوسم (رمز التعريف البصري داخل الموقع)</label>
+    <label>الوسم</label>
     <select id="new-poet-wasm"></select>
   </div>
 
   <fieldset>
-    <legend>القصيدة</legend>
+    <legend>بيانات القصيدة</legend>
     <label>عنوان القصيدة</label>
     <input type="text" id="poem-title" />
-
     <div class="row">
-      <div>
-        <label>البحر / الوزن (اختياري)</label>
-        <input type="text" id="poem-meter" />
-      </div>
-      <div>
-        <label>التاريخ (اختياري)</label>
-        <input type="text" id="poem-date" />
-      </div>
+      <div><label>التاريخ (اختياري)</label><input type="text" id="poem-date" /></div>
+      <div><label>المصدر (اختياري)</label><input type="text" id="poem-source" /></div>
     </div>
 
-    <label>المصدر (اختياري — تويتر، اسم الموقع...)</label>
-    <input type="text" id="poem-source" />
+    <div style="margin-top:14px">
+      <label style="margin:0;display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="is-mujarat" onchange="toggleMujarat()" style="width:auto" />
+        هذه القصيدة مجاراة / ردٌّ على قصيدة أخرى
+      </label>
+    </div>
+    <div class="mujarat-fields" id="mujarat-fields">
+      <label>اسم الشاعر الأصلي</label>
+      <input type="text" id="mujarat-poet-name" placeholder="مثال: تراحيب السويلم" />
+      <label>عنوان القصيدة الأصلية</label>
+      <input type="text" id="mujarat-poem-title" placeholder="مثال: يا ولد من يوم عيوا بالاجازه" />
+      <label>معرّف القصيدة الأصلية (يتيح الربط المباشر — اختياري)</label>
+      <select id="mujarat-poem-id">
+        <option value="">اترك فاضي إذا ما تعرف</option>
+      </select>
+    </div>
   </fieldset>
 
   <fieldset>
     <legend>الأبيات</legend>
-    <p class="hint">كل بيت له نصفين: الصدر (الأول) والعجز (الثاني).</p>
-    <div id="verses-container"></div>
-    <button type="button" onclick="addVerseRow()">+ إضافة بيت</button>
+    <div class="mode-tabs">
+      <button type="button" class="mode-tab active" onclick="setMode('manual')">إدخال بيت بيت</button>
+      <button type="button" class="mode-tab" onclick="setMode('paste')">لصق القصيدة كاملة</button>
+    </div>
+
+    <div class="mode-panel active" id="mode-manual">
+      <p class="hint">كل بيت له نصفين: الصدر (الأول) والعجز (الثاني).</p>
+      <div id="verses-container"></div>
+      <button type="button" onclick="addVerseRow()">+ إضافة بيت</button>
+    </div>
+
+    <div class="mode-panel" id="mode-paste">
+      <p class="hint">الصق القصيدة كاملة — كل سطر = نصف بيت. السطر الفردي (١، ٣، ٥…) = صدر، والزوجي (٢، ٤، ٦…) = عجز. السطور الفارغة تُتجاهل تلقائياً.</p>
+      <textarea class="paste-area" id="paste-area" placeholder="الصق القصيدة هنا…"></textarea>
+      <div style="margin-top:10px;display:flex;gap:10px;align-items:center">
+        <button type="button" class="sage" onclick="parsePaste()">← تحليل وتقسيم الأبيات</button>
+        <span id="parse-count" class="hint"></span>
+      </div>
+      <div id="parsed-preview" style="display:none;margin-top:16px">
+        <p class="hint">راجع الأبيات قبل الحفظ — تقدر تعدّل أي سطر:</p>
+        <div id="parsed-verses"></div>
+      </div>
+    </div>
   </fieldset>
 
   <div style="margin-top:20px">
@@ -105,24 +130,27 @@
 </form>
 
 <div id="output-wrap">
-  <p class="hint">انسخ النص بالأسفل كامل، روح لملف <b>data/diwan.json</b> بمستودعك،
-    احذف كل محتواه القديم، الصق هذا الجديد، واضغط Commit changes.</p>
+  <p class="hint">انسخ النص كامل ← روح لملف <b>data/diwan.json</b> بمستودعك ← احذف المحتوى القديم كله ← الصق ← Commit changes.</p>
   <textarea id="output" readonly></textarea>
-  <button class="primary" onclick="copyOutput()">نسخ الكل</button>
+  <div style="display:flex;gap:10px;margin-top:8px">
+    <button class="primary" onclick="copyOutput()">نسخ الكل</button>
+    <button onclick="resetForm()">إضافة قصيدة أخرى</button>
+  </div>
   <p id="copy-status" class="hint"></p>
 </div>
 
 <script>
-const WASM_OPTIONS = ["wasm-1", "wasm-2", "wasm-3", "wasm-4", "wasm-5"];
+const WASM_OPTIONS = ["wasm-1","wasm-2","wasm-3","wasm-4","wasm-5"];
 let diwan = null;
+let currentMode = "manual";
 
 async function init() {
   try {
     const res = await fetch("data/diwan.json");
-    if (!res.ok) throw new Error("not found");
+    if (!res.ok) throw new Error();
     diwan = await res.json();
     afterLoad();
-  } catch (err) {
+  } catch {
     document.getElementById("status").textContent = "تعذّر التحميل التلقائي.";
     document.getElementById("manual-load").style.display = "block";
   }
@@ -131,11 +159,11 @@ async function init() {
 function loadManual() {
   try {
     const parsed = JSON.parse(document.getElementById("manual-json").value);
-    if (!parsed.poets) throw new Error("no poets key");
+    if (!parsed.poets) throw new Error();
     diwan = parsed;
     afterLoad();
-  } catch (err) {
-    alert("النص اللي لصقته ما هو ملف diwan.json صحيح، تأكد إنك نسخت الملف كامل من أوله لآخره.");
+  } catch {
+    alert("النص اللي لصقته ما هو ملف diwan.json صحيح.");
   }
 }
 
@@ -144,17 +172,27 @@ function afterLoad() {
   document.getElementById("poem-form").style.display = "block";
 
   const sel = document.getElementById("poet-select");
-  sel.innerHTML =
-    diwan.poets.map(p => `<option value="${p.id}">${p.name}</option>`).join("") +
-    `<option value="__new__">+ شاعر جديد</option>`;
+  sel.innerHTML = diwan.poets.map(p =>
+    `<option value="${p.id}">${p.name}</option>`
+  ).join("") + `<option value="__new__">+ شاعر جديد</option>`;
   sel.addEventListener("change", toggleNewPoet);
 
+  const mSel = document.getElementById("mujarat-poem-id");
+  mSel.innerHTML = `<option value="">اترك فاضي إذا ما تعرف</option>`;
+  diwan.poets.forEach(p => {
+    p.poems.forEach(poem => {
+      const opt = document.createElement("option");
+      opt.value = poem.id;
+      opt.textContent = `${p.name} — ${poem.title}`;
+      mSel.appendChild(opt);
+    });
+  });
+
   const usedWasms = diwan.poets.map(p => p.wasm);
-  const wasmSel = document.getElementById("new-poet-wasm");
   const available = WASM_OPTIONS.filter(w => !usedWasms.includes(w));
-  wasmSel.innerHTML = available.length
+  document.getElementById("new-poet-wasm").innerHTML = available.length
     ? available.map(w => `<option value="${w}">${w}</option>`).join("")
-    : `<option value="">لا يوجد وسم متاح — تواصل معي لإضافة وسم جديد</option>`;
+    : `<option value="">لا يوجد وسم متاح</option>`;
 
   addVerseRow();
   addVerseRow();
@@ -165,61 +203,116 @@ function toggleNewPoet() {
   document.getElementById("new-poet-fields").style.display = isNew ? "block" : "none";
 }
 
-function addVerseRow() {
+function toggleMujarat() {
+  const on = document.getElementById("is-mujarat").checked;
+  document.getElementById("mujarat-fields").style.display = on ? "block" : "none";
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll(".mode-tab").forEach((t, i) => {
+    t.classList.toggle("active", (i === 0) === (mode === "manual"));
+  });
+  document.getElementById("mode-manual").classList.toggle("active", mode === "manual");
+  document.getElementById("mode-paste").classList.toggle("active", mode === "paste");
+}
+
+function addVerseRow(sadr="", ajz="") {
+  const container = document.getElementById("verses-container");
+  const num = container.children.length + 1;
   const wrap = document.createElement("div");
   wrap.className = "verse-row";
   wrap.innerHTML = `
-    <input type="text" placeholder="الصدر" class="sadr-input" />
-    <input type="text" placeholder="العجز" class="ajz-input" />
-    <button type="button" onclick="this.parentElement.remove()">حذف</button>
+    <span class="verse-num">${num}</span>
+    <input type="text" placeholder="الصدر" class="sadr-input" value="${esc(sadr)}" />
+    <input type="text" placeholder="العجز" class="ajz-input" value="${esc(ajz)}" />
+    <button type="button" onclick="this.parentElement.remove();renumber('#verses-container .verse-num')">✕</button>
   `;
-  document.getElementById("verses-container").appendChild(wrap);
+  container.appendChild(wrap);
+}
+
+function renumber(sel) {
+  document.querySelectorAll(sel).forEach((el, i) => { el.textContent = i + 1; });
+}
+
+function parsePaste() {
+  const lines = document.getElementById("paste-area").value
+    .split("\n").map(l => l.trim()).filter(l => l);
+  if (!lines.length) { alert("الصق القصيدة أولاً."); return; }
+
+  const pairs = [];
+  for (let i = 0; i < lines.length; i += 2)
+    pairs.push({ sadr: lines[i] || "", ajz: lines[i+1] || "" });
+
+  document.getElementById("parse-count").textContent = `${pairs.length} بيت — راجعهم وعدّل إذا احتجت`;
+  const preview = document.getElementById("parsed-verses");
+  preview.innerHTML = "";
+  pairs.forEach((v, i) => {
+    const row = document.createElement("div");
+    row.className = "verse-row";
+    row.innerHTML = `
+      <span class="verse-num">${i+1}</span>
+      <input type="text" class="sadr-parsed" value="${esc(v.sadr)}" placeholder="الصدر" />
+      <input type="text" class="ajz-parsed" value="${esc(v.ajz)}" placeholder="العجز" />
+      <button type="button" onclick="this.parentElement.remove();renumber('#parsed-verses .verse-num')">✕</button>
+    `;
+    preview.appendChild(row);
+  });
+  document.getElementById("parsed-preview").style.display = "block";
+}
+
+function getVerses() {
+  if (currentMode === "paste") {
+    return [...document.querySelectorAll("#parsed-verses .verse-row")]
+      .map(r => ({ sadr: r.querySelector(".sadr-parsed").value.trim(), ajz: r.querySelector(".ajz-parsed").value.trim() }))
+      .filter(v => v.sadr || v.ajz);
+  }
+  return [...document.querySelectorAll("#verses-container .verse-row")]
+    .map(r => ({ sadr: r.querySelector(".sadr-input").value.trim(), ajz: r.querySelector(".ajz-input").value.trim() }))
+    .filter(v => v.sadr || v.ajz);
 }
 
 function generateOutput() {
   const poetSel = document.getElementById("poet-select").value;
   const title = document.getElementById("poem-title").value.trim();
-
   if (!title) { alert("لازم تكتب عنوان القصيدة."); return; }
+  const verses = getVerses();
+  if (!verses.length) { alert("لازم تضيف بيت واحد على الأقل."); return; }
 
-  const verses = [...document.querySelectorAll(".verse-row")]
-    .map(row => ({
-      sadr: row.querySelector(".sadr-input").value.trim(),
-      ajz: row.querySelector(".ajz-input").value.trim()
-    }))
-    .filter(v => v.sadr || v.ajz);
-
-  if (verses.length === 0) { alert("لازم تضيف بيت واحد على الأقل."); return; }
-
+  const copy = JSON.parse(JSON.stringify(diwan));
   let poet;
   if (poetSel === "__new__") {
     const name = document.getElementById("new-poet-name").value.trim();
     if (!name) { alert("لازم تكتب اسم الشاعر الجديد."); return; }
-    const wasm = document.getElementById("new-poet-wasm").value;
-    const newId = "poet-" + (diwan.poets.length + 1);
-    poet = {
-      id: newId,
-      name: name,
-      wasm: wasm,
-      bio: document.getElementById("new-poet-bio").value.trim(),
-      poems: []
-    };
-    diwan.poets.push(poet);
+    poet = { id: "poet-" + (copy.poets.length + 1), name,
+              wasm: document.getElementById("new-poet-wasm").value,
+              bio: document.getElementById("new-poet-bio").value.trim(), poems: [] };
+    copy.poets.push(poet);
   } else {
-    poet = diwan.poets.find(p => p.id === poetSel);
+    poet = copy.poets.find(p => p.id === poetSel);
   }
 
-  const poemId = poet.id + "-poem-" + (poet.poems.length + 1);
-  poet.poems.push({
-    id: poemId,
-    title: title,
-    meter: document.getElementById("poem-meter").value.trim(),
+  const newPoem = {
+    id: poet.id + "-poem-" + (poet.poems.length + 1),
+    title,
+    meter: "",
     date: document.getElementById("poem-date").value.trim(),
     source: document.getElementById("poem-source").value.trim(),
-    verses: verses
-  });
+    verses
+  };
 
-  document.getElementById("output").value = JSON.stringify(diwan, null, 2);
+  if (document.getElementById("is-mujarat").checked) {
+    newPoem.mujarat = {
+      respondingToPoet: document.getElementById("mujarat-poet-name").value.trim(),
+      respondingToTitle: document.getElementById("mujarat-poem-title").value.trim(),
+      respondingToId: document.getElementById("mujarat-poem-id").value || ""
+    };
+  }
+
+  poet.poems.push(newPoem);
+  diwan = JSON.parse(JSON.stringify(copy));
+
+  document.getElementById("output").value = JSON.stringify(copy, null, 2);
   document.getElementById("output-wrap").style.display = "block";
   document.getElementById("output-wrap").scrollIntoView({ behavior: "smooth" });
 }
@@ -227,14 +320,36 @@ function generateOutput() {
 function copyOutput() {
   const ta = document.getElementById("output");
   ta.select();
-  const statusEl = document.getElementById("copy-status");
-  if (navigator.clipboard && navigator.clipboard.writeText) {
+  const st = document.getElementById("copy-status");
+  if (navigator.clipboard?.writeText) {
     navigator.clipboard.writeText(ta.value)
-      .then(() => { statusEl.textContent = "تم النسخ ✓"; })
-      .catch(() => { statusEl.textContent = "تعذّر النسخ التلقائي — النص محدد، اضغط نسخ من قائمة الجوال."; });
+      .then(() => { st.textContent = "تم النسخ ✓"; })
+      .catch(() => { st.textContent = "النص محدد — اضغط نسخ يدوياً."; });
   } else {
-    statusEl.textContent = "النص محدد — اضغط نسخ من قائمة الجوال يدويًا.";
+    st.textContent = "النص محدد — اضغط نسخ يدوياً.";
   }
+}
+
+function resetForm() {
+  ["poem-title","poem-date","poem-source","mujarat-poet-name","mujarat-poem-title"].forEach(id => {
+    document.getElementById(id).value = "";
+  });
+  document.getElementById("is-mujarat").checked = false;
+  document.getElementById("mujarat-fields").style.display = "none";
+  document.getElementById("mujarat-poem-id").value = "";
+  document.getElementById("verses-container").innerHTML = "";
+  document.getElementById("paste-area").value = "";
+  document.getElementById("parsed-preview").style.display = "none";
+  document.getElementById("parse-count").textContent = "";
+  document.getElementById("output-wrap").style.display = "none";
+  document.getElementById("copy-status").textContent = "";
+  setMode("manual");
+  addVerseRow(); addVerseRow();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
 init();
