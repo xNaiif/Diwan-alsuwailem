@@ -196,31 +196,11 @@ function showPoem(poemId) {
   el.poemDetail.classList.remove("hidden");
   document.querySelectorAll(".pill").forEach(p => p.classList.remove("active"));
 
-  const versesHtml = (poem.verses || []).map(v =>
-    `<div class="verse">
-      <span class="sadr">${v.sadr}</span>
-      <span class="divider"></span>
-      <span class="ajz">${v.ajz}</span>
-    </div>`
-  ).join("");
+  const backBtn = isExternal
+    ? `<button class="back-btn" onclick="history.back()">← رجوع</button>`
+    : `<button class="back-btn" data-return-to="${poet.id}">← الرجوع إلى قصائد ${poet.name}</button>`;
 
-  /* ---- هذه القصيدة ردّ/مجاراة لـ ---- */
-  let mujaratSection = "";
-  if (poem.mujarat) {
-    const m = poem.mujarat;
-    const targetLink = m.respondingToId
-      ? `<button class="mujarat-goto" data-poem-id="${m.respondingToId}">
-           اقرأ البديعة الأصلية: ${m.respondingToTitle} ←
-         </button>`
-      : `<span style="color:var(--text-muted)">${m.respondingToTitle}</span>`;
-    mujaratSection = `
-      <div class="mujarat-section">
-        <span class="mujarat-label">${roleBadge(poem.role)} ${poem.role === "رد" ? "ردٌّ على" : "مجاراةٌ لـ"} ${m.respondingToPoet}</span>
-        ${targetLink}
-      </div>`;
-  }
-
-  /* ---- ردود على هذه القصيدة ---- */
+  // ردود على هذه القصيدة
   const responseIds = state.responsesMap[poemId] || [];
   let responsesSection = "";
   if (responseIds.length > 0) {
@@ -229,37 +209,86 @@ function showPoem(poemId) {
       if (!r) return "";
       return `<button class="mujarat-goto" data-poem-id="${r.poem.id}">
         ${r.isExternal ? "" : wasmIcon(r.poet.wasm, "width:13px;height:13px;")}
-        ${r.poet.name} — ${r.poem.title}
-        ${roleBadge(r.poem.role)}
+        ${r.poet.name} — ${r.poem.title} ${roleBadge(r.poem.role)}
       </button>`;
     }).join("");
     responsesSection = `
-      <div class="mujarat-section" style="margin-top:10px">
+      <div class="mujarat-section" style="margin-top:24px">
         <span class="mujarat-label">ردود ومجاراات على هذه القصيدة</span>
         <div class="mujarat-responses">${links}</div>
       </div>`;
   }
 
-  const backBtn = isExternal
-    ? `<button class="back-btn" onclick="history.back()">← رجوع</button>`
-    : `<button class="back-btn" data-return-to="${poet.id}">← الرجوع إلى قصائد ${poet.name}</button>`;
+  // وضع السلسلة: إذا القصيدة رد/مجاراة ومرتبطة بأصل
+  const isChain = (poem.role === "رد" || poem.role === "مجاراة") && poem.mujarat?.respondingToId;
+  const originalFound = isChain ? findPoem(poem.mujarat.respondingToId) : null;
 
-  const externalNote = isExternal
-    ? `<div style="text-align:center;margin-bottom:16px">
-         <span class="role-badge role-بدع">شاعر خارجي</span>
-         <span style="color:var(--text-faint);font-size:.85rem;margin-right:8px">هذه القصيدة مرجع فقط ولا تنتمي للديوان</span>
-       </div>`
-    : "";
+  if (isChain && originalFound) {
+    el.poemDetail.innerHTML = buildChainView(backBtn, originalFound, { poet, poem }, responsesSection);
+  } else {
+    el.poemDetail.innerHTML = buildNormalView(backBtn, poet, poem, isExternal, responsesSection);
+  }
+}
 
-  el.poemDetail.innerHTML = `
+function buildVerses(verses) {
+  return (verses || []).map(v => `
+    <div class="verse">
+      <span class="sadr">${v.sadr}</span>
+      <span class="divider"></span>
+      <span class="ajz">${v.ajz}</span>
+    </div>`).join("");
+}
+
+function buildChainView(backBtn, origFound, resp, responsesSection) {
+  const { poet: origPoet, poem: origPoem } = origFound;
+  const { poet: respPoet, poem: respPoem } = resp;
+  const origVerses = buildVerses(origPoem.verses);
+  const respVerses = buildVerses(respPoem.verses);
+
+  return `
+    ${backBtn}
+    <div class="poem-chain">
+      <div class="chain-poem">
+        <div class="chain-poet-label">
+          ${roleBadge("بدع")} ${origPoet.name}
+          ${origPoem.date ? `<span class="poem-meta">· ${origPoem.date}</span>` : ""}
+        </div>
+        <h3 class="chain-title">${origPoem.title}</h3>
+        ${origVerses
+          ? `<div class="verses chain-verses">${origVerses}</div>`
+          : `<p class="chain-no-verses">لم تُحفظ أبيات هذه القصيدة في الديوان</p>`}
+      </div>
+
+      <div class="chain-divider">
+        <span>${respPoem.role === "رد" ? "ردّ " + respPoet.name : "مجاراة " + respPoet.name}</span>
+      </div>
+
+      <div class="chain-poem">
+        <div class="chain-poet-label">
+          ${roleBadge(respPoem.role)}
+          ${wasmIcon(respPoet.wasm, "width:16px;height:16px;")}
+          ${respPoet.name}
+          ${respPoem.date ? `<span class="poem-meta">· ${respPoem.date}</span>` : ""}
+        </div>
+        <h3 class="chain-title">${respPoem.title}</h3>
+        <div class="verses chain-verses">${respVerses}</div>
+      </div>
+    </div>
+    ${responsesSection}`;
+}
+
+function buildNormalView(backBtn, poet, poem, isExternal, responsesSection) {
+  const versesHtml = buildVerses(poem.verses);
+  return `
     ${backBtn}
     <div class="poem-header">
-      ${isExternal ? `<span class="role-badge role-بدع" style="font-size:1rem;padding:4px 14px">بدع</span>` : wasmIcon(poet.wasm)}
+      ${isExternal
+        ? `<span class="role-badge role-بدع" style="font-size:1rem;padding:4px 14px">بدع</span>`
+        : wasmIcon(poet.wasm)}
       <h2>${poem.title}</h2>
       <div class="poem-meta">${poet.name}${poem.date ? " · " + poem.date : ""}${poem.meter ? " · " + poem.meter : ""}</div>
+      ${roleBadge(poem.role)}
     </div>
-    ${externalNote}
-    ${mujaratSection}
-    ${versesHtml ? `<div class="verses">${versesHtml}</div>` : `<p style="text-align:center;color:var(--text-faint)">لم تُحفظ أبيات هذه القصيدة في الديوان</p>`}
+    <div class="verses">${versesHtml}</div>
     ${responsesSection}`;
 }
