@@ -89,7 +89,20 @@ summary::before{content:"⚙️ ";margin-left:4px}
   <!-- قسم الشاعر الداخلي -->
   <div id="internal-section">
     <label>الشاعر</label>
-    <select id="poet-select"></select>
+    <select id="poet-select" onchange="toggleNewPoetFields()"></select>
+
+    <!-- حقول شاعر جديد -->
+    <div id="new-poet-fields" class="hidden-section" style="margin-top:10px">
+      <fieldset style="border-color:var(--sage)">
+        <legend style="color:var(--sage)">بيانات الشاعر الجديد</legend>
+        <label>الاسم الكامل</label>
+        <input type="text" id="new-poet-name" placeholder="مثال: ضيف الله السويلم"/>
+        <label>نبذة مختصرة (اختياري)</label>
+        <textarea id="new-poet-bio" placeholder="تعريف مختصر بالشاعر وأسلوبه…" style="min-height:70px"></textarea>
+        <label>الوسم (الرمز المرئي في الموقع)</label>
+        <select id="new-poet-wasm"></select>
+      </fieldset>
+    </div>
 
     <label>دور القصيدة</label>
     <div class="role-pills" id="role-pills">
@@ -259,9 +272,18 @@ function afterLoad() {
   document.getElementById('loader').style.display = 'none';
   document.getElementById('poem-form').style.display = 'block';
 
-  // قائمة الشعراء الداخليين
+  // قائمة الشعراء الداخليين + خيار إضافة شاعر جديد
   const pSel = document.getElementById('poet-select');
-  pSel.innerHTML = diwan.poets.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  pSel.innerHTML = diwan.poets.map(p => `<option value="${p.id}">${p.name}</option>`).join('') +
+    `<option value="__new__">+ إضافة شاعر جديد من آل السويلم</option>`;
+
+  // وسوم متاحة للشاعر الجديد
+  const usedWasms = diwan.poets.map(p => p.wasm);
+  const allWasms = ['wasm-1','wasm-2','wasm-3','wasm-4','wasm-5'];
+  const freeWasms = allWasms.filter(w => !usedWasms.includes(w));
+  document.getElementById('new-poet-wasm').innerHTML = freeWasms.length
+    ? freeWasms.map(w => `<option value="${w}">${w}</option>`).join('')
+    : `<option value="">لا يوجد وسم متاح — تواصل مع المطور لإضافة وسم جديد</option>`;
 
   // قائمة كل القصائد للمجاراة (داخلية + خارجية)
   const mSel = document.getElementById('mujarat-poem-id');
@@ -292,6 +314,11 @@ function afterLoad() {
 }
 
 /* ===== أوضاع الإضافة ===== */
+function toggleNewPoetFields() {
+  const isNew = document.getElementById('poet-select').value === '__new__';
+  document.getElementById('new-poet-fields').style.display = isNew ? '' : 'none';
+}
+
 function setAddMode(mode) {
   addMode = mode;
   document.querySelectorAll('#poem-form .mode-tab').forEach((t, i) => {
@@ -390,6 +417,13 @@ function buildPoemData() {
   }
 
   const poetId = document.getElementById('poet-select').value;
+
+  // التحقق من بيانات الشاعر الجديد
+  if (poetId === '__new__') {
+    const newName = document.getElementById('new-poet-name').value.trim();
+    if (!newName) { alert('لازم تكتب اسم الشاعر الجديد.'); return null; }
+  }
+
   const poem = { title, role: currentRole, meter: '',
                  date: document.getElementById('poem-date').value.trim(),
                  source: document.getElementById('poem-source').value.trim(), verses };
@@ -419,7 +453,21 @@ function applyToLocalDiwan(data, diwanCopy) {
     extPoet.poems.push(poem);
     return poem;
   } else {
-    const poet = diwanCopy.poets.find(p => p.id === data.poetId);
+    let poet;
+    if (data.poetId === '__new__') {
+      // أنشئ الشاعر الجديد وأضفه للقائمة
+      const newId = 'poet-' + (diwanCopy.poets.length + 1);
+      poet = {
+        id: newId,
+        name: document.getElementById('new-poet-name').value.trim(),
+        wasm: document.getElementById('new-poet-wasm').value,
+        bio: document.getElementById('new-poet-bio').value.trim() || '',
+        poems: []
+      };
+      diwanCopy.poets.push(poet);
+    } else {
+      poet = diwanCopy.poets.find(p => p.id === data.poetId);
+    }
     data.poem.id = poet.id + '-poem-' + (poet.poems.length + 1);
     poet.poems.push(data.poem);
     return data.poem;
