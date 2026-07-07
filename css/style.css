@@ -108,3 +108,65 @@ main{position:relative;z-index:1;max-width:var(--container);margin:0 auto;paddin
 /* ---------- التذييل ---------- */
 .site-footer{position:relative;z-index:1;text-align:center;padding:28px 20px 40px;color:var(--text-faint);font-size:.85rem;border-top:1px solid var(--border)}
 .site-footer .footer-note{display:block;margin-top:6px;color:var(--text-faint);opacity:.8}
+
+/* ---------- سلسلة القصائد (بدع + رد في صفحة واحدة) ---------- */
+.poem-chain {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.chain-poem {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px 22px;
+}
+
+.chain-poet-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: .85rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  font-family: var(--font-body);
+}
+
+.chain-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 3vw, 1.6rem);
+  margin: 0 0 16px;
+  color: var(--text);
+}
+
+.chain-verses .verse {
+  font-size: clamp(1rem, 2.2vw, 1.25rem);
+}
+
+.chain-no-verses {
+  color: var(--text-faint);
+  font-size: .85rem;
+  text-align: center;
+  padding: 10px;
+  margin: 0;
+}
+
+.chain-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 16px 0;
+  color: var(--gold);
+  font-size: .9rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+}
+
+.chain-divider::before,
+.chain-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
