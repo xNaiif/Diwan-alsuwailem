@@ -115,20 +115,28 @@ summary::before{content:"⚙️ ";margin-left:4px}
     <!-- مجاراة/رد: القصيدة المرجع -->
     <div id="mujarat-ref-section" class="hidden-section">
       <fieldset style="border-color:var(--gold)">
-        <legend>القصيدة المرجع</legend>
-        <label>اختر من قائمة القصائد الموجودة</label>
-        <select id="mujarat-poem-id">
-          <option value="">— اختر قصيدة أو أدخل يدوياً —</option>
+        <legend>القصيدة الأصلية (البدع)</legend>
+        <label>اختر القصيدة</label>
+        <select id="mujarat-poem-id" onchange="onMujaratSelect()">
+          <option value="">— اختر —</option>
         </select>
-        <div class="row" style="margin-top:8px">
-          <div>
-            <label>اسم الشاعر الأصلي</label>
-            <input type="text" id="mujarat-poet-name" placeholder="مثال: حبيب العازمي"/>
+
+        <!-- يظهر فقط عند اختيار "شاعر خارجي" -->
+        <div id="external-poem-fields" class="hidden-section" style="margin-top:12px">
+          <div class="row">
+            <div>
+              <label>اسم الشاعر</label>
+              <input type="text" id="ext-ref-poet-name" placeholder="مثال: حبيب العازمي"/>
+            </div>
+            <div>
+              <label>عنوان قصيدته</label>
+              <input type="text" id="ext-ref-poem-title" placeholder="عنوان القصيدة"/>
+            </div>
           </div>
-          <div>
-            <label>عنوان القصيدة الأصلية</label>
-            <input type="text" id="mujarat-poem-title" placeholder="عنوان القصيدة"/>
-          </div>
+          <label>أبيات قصيدته (اختياري — تظهر فوق ردّك في الموقع)</label>
+          <textarea id="ext-ref-poem-verses" class="paste-area"
+            placeholder="الصق أبياته هنا — كل سطر = نصف بيت&#10;لو ما عندك الأبيات اتركه فاضي"
+            style="min-height:160px"></textarea>
         </div>
       </fieldset>
     </div>
@@ -285,30 +293,16 @@ function afterLoad() {
     ? freeWasms.map(w => `<option value="${w}">${w}</option>`).join('')
     : `<option value="">لا يوجد وسم متاح — تواصل مع المطور لإضافة وسم جديد</option>`;
 
-  // قائمة كل القصائد للمجاراة (داخلية + خارجية)
+  // قائمة كل القصائد للمجاراة (داخلية + خارجية + شاعر خارجي جديد)
   const mSel = document.getElementById('mujarat-poem-id');
-  mSel.innerHTML = `<option value="">— اختر قصيدة —</option>`;
+  mSel.innerHTML = `<option value="">— اختر —</option>`;
   diwan.poets.forEach(p => p.poems.forEach(poem => {
     mSel.innerHTML += `<option value="${poem.id}">${p.name} — ${poem.title}</option>`;
   }));
   (diwan.externalPoets || []).forEach(p => p.poems.forEach(poem => {
     mSel.innerHTML += `<option value="${poem.id}">[خارجي] ${p.name} — ${poem.title}</option>`;
   }));
-
-  // عند اختيار قصيدة من القائمة، أملأ الحقول تلقائياً
-  mSel.addEventListener('change', () => {
-    const id = mSel.value;
-    if (!id) return;
-    const allPoems = [
-      ...diwan.poets.flatMap(p => p.poems.map(poem => ({ poet: p, poem }))),
-      ...(diwan.externalPoets || []).flatMap(p => p.poems.map(poem => ({ poet: p, poem })))
-    ];
-    const found = allPoems.find(x => x.poem.id === id);
-    if (found) {
-      document.getElementById('mujarat-poet-name').value = found.poet.name;
-      document.getElementById('mujarat-poem-title').value = found.poem.title;
-    }
-  });
+  mSel.innerHTML += `<option value="__external__">──── شاعر من خارج الديوان (أضفه الآن) ────</option>`;
 
   addVerseRow(); addVerseRow();
 }
@@ -317,6 +311,12 @@ function afterLoad() {
 function toggleNewPoetFields() {
   const isNew = document.getElementById('poet-select').value === '__new__';
   document.getElementById('new-poet-fields').style.display = isNew ? '' : 'none';
+}
+
+function onMujaratSelect() {
+  const val = document.getElementById('mujarat-poem-id').value;
+  document.getElementById('external-poem-fields').style.display =
+    val === '__external__' ? '' : 'none';
 }
 
 function setAddMode(mode) {
@@ -429,11 +429,35 @@ function buildPoemData() {
                  source: document.getElementById('poem-source').value.trim(), verses };
 
   if (currentRole === 'رد' || currentRole === 'مجاراة') {
-    poem.mujarat = {
-      respondingToPoet: document.getElementById('mujarat-poet-name').value.trim(),
-      respondingToTitle: document.getElementById('mujarat-poem-title').value.trim(),
-      respondingToId: document.getElementById('mujarat-poem-id').value || ''
-    };
+    const mujaratId = document.getElementById('mujarat-poem-id').value;
+
+    if (mujaratId === '__external__') {
+      // شاعر خارجي جديد — نجمع بياناته هنا وننشئه وقت التطبيق
+      const extPoetName = document.getElementById('ext-ref-poet-name').value.trim();
+      const extPoemTitle = document.getElementById('ext-ref-poem-title').value.trim();
+      if (!extPoetName || !extPoemTitle) {
+        alert('لازم تكتب اسم الشاعر الخارجي وعنوان قصيدته.'); return null;
+      }
+      poem.pendingExternal = {
+        poetName: extPoetName,
+        poemTitle: extPoemTitle,
+        versesRaw: document.getElementById('ext-ref-poem-verses').value.trim()
+      };
+      poem.mujarat = { respondingToPoet: extPoetName, respondingToTitle: extPoemTitle, respondingToId: '' };
+
+    } else {
+      // قصيدة موجودة في الديوان — ابحث عن بيانات الشاعر تلقائياً
+      const allPoems = [
+        ...diwan.poets.flatMap(p => p.poems.map(m => ({ poet: p, poem: m }))),
+        ...(diwan.externalPoets || []).flatMap(p => p.poems.map(m => ({ poet: p, poem: m })))
+      ];
+      const ref = allPoems.find(x => x.poem.id === mujaratId);
+      poem.mujarat = {
+        respondingToPoet: ref ? ref.poet.name : '',
+        respondingToTitle: ref ? ref.poem.title : '',
+        respondingToId: mujaratId || ''
+      };
+    }
   }
   return { type: 'internal', poetId, poem };
 }
@@ -455,7 +479,6 @@ function applyToLocalDiwan(data, diwanCopy) {
   } else {
     let poet;
     if (data.poetId === '__new__') {
-      // أنشئ الشاعر الجديد وأضفه للقائمة
       const newId = 'poet-' + (diwanCopy.poets.length + 1);
       poet = {
         id: newId,
@@ -468,6 +491,35 @@ function applyToLocalDiwan(data, diwanCopy) {
     } else {
       poet = diwanCopy.poets.find(p => p.id === data.poetId);
     }
+
+    // لو فيه قصيدة خارجية جديدة تحتاج إنشاء أولاً
+    if (data.poem.pendingExternal) {
+      const ext = data.poem.pendingExternal;
+      delete data.poem.pendingExternal;
+
+      if (!diwanCopy.externalPoets) diwanCopy.externalPoets = [];
+      let extPoet = diwanCopy.externalPoets.find(p => p.name === ext.poetName);
+      if (!extPoet) {
+        extPoet = { id: 'ext-' + (diwanCopy.externalPoets.length + 1), name: ext.poetName, poems: [] };
+        diwanCopy.externalPoets.push(extPoet);
+      }
+      const extPoemId = extPoet.id + '-poem-' + (extPoet.poems.length + 1);
+      const extPoem = { id: extPoemId, title: ext.poemTitle, role: 'بدع', source: '' };
+
+      // أضف الأبيات لو موجودة
+      if (ext.versesRaw) {
+        const lines = ext.versesRaw.split('\n').map(l => l.trim()).filter(Boolean);
+        const verses = [];
+        for (let i = 0; i < lines.length; i += 2)
+          verses.push({ sadr: lines[i] || '', ajz: lines[i+1] || '' });
+        if (verses.length) extPoem.verses = verses;
+      }
+      extPoet.poems.push(extPoem);
+
+      // اربط الرد بالقصيدة الخارجية
+      data.poem.mujarat.respondingToId = extPoemId;
+    }
+
     data.poem.id = poet.id + '-poem-' + (poet.poems.length + 1);
     poet.poems.push(data.poem);
     return data.poem;
@@ -564,9 +616,11 @@ function copyOutput() {
 }
 
 function resetForm() {
-  ['poem-title','poem-date','poem-source','mujarat-poet-name','mujarat-poem-title','ext-poet-name','paste-area']
+  ['poem-title','poem-date','poem-source','mujarat-poet-name','mujarat-poem-title',
+   'ext-poet-name','paste-area','ext-ref-poet-name','ext-ref-poem-title','ext-ref-poem-verses']
     .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   document.getElementById('mujarat-poem-id').value = '';
+  document.getElementById('external-poem-fields').style.display = 'none';
   document.getElementById('verses-container').innerHTML = '';
   document.getElementById('parsed-preview').style.display = 'none';
   document.getElementById('parse-count').textContent = '';
