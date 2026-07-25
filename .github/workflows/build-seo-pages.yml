@@ -1,0 +1,35 @@
+name: Build SEO pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'data/diwan.json'
+      - 'scripts/generate_pages.py'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Generate static poem/poet pages
+        run: python3 scripts/generate_pages.py
+
+      - name: Commit generated pages
+        run: |
+          git config user.name "diwan-bot"
+          git config user.email "actions@github.com"
+          git add poems/ poets/ sitemap.xml robots.txt
+          git diff --cached --quiet && echo "no changes" || git commit -m "توليد صفحات تلقائي [skip ci]"
+          git push
