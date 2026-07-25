@@ -170,3 +170,18 @@ main{position:relative;z-index:1;max-width:var(--container);margin:0 auto;paddin
   height: 1px;
   background: var(--border);
 }
+
+
+/* ---------- صور الشعراء (بديل الوسوم) ---------- */
+.poet-photo {
+  border-radius: 50%;
+  object-fit: cover;
+  display: inline-block;
+  border: 1.5px solid var(--gold);
+  background: var(--surface-2);
+  flex-shrink: 0;
+}
+
+.wasm-legend-item .poet-photo { margin-bottom: 2px; }
+
+.poet-bio-banner .poet-photo { border-width: 2px; }
