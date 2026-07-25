@@ -10,16 +10,25 @@ const WASM_ICONS = {
   "wasm-5": `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"> <polyline points="6,28 14,12 20,28 26,12 34,28" /> </svg>`
 };
 
+function wasmIcon(wasmId, extraStyle) {
+  const svg = WASM_ICONS[wasmId] || "";
+  return svg.replace("<svg ", `<svg style="color:var(--gold);${extraStyle || ""}" `);
+}
+
+/* صورة الشاعر إن وُجدت، وإلا يرجع للوسم القديم تلقائياً */
+function poetMark(poet, sizeStyle) {
+  const style = sizeStyle || "width:34px;height:34px;";
+  if (poet.photo) {
+    return `<img src="${poet.photo}" class="poet-photo" style="${style}" alt="${poet.name}" />`;
+  }
+  return wasmIcon(poet.wasm, style);
+}
+
 const ROLE_LABELS = {
   "بدع":    { text: "بدع",          cls: "role-badge role-بدع"    },
   "رد":     { text: "ردّ",          cls: "role-badge role-رد"     },
   "مجاراة": { text: "مجاراة",       cls: "role-badge role-مجاراة" }
 };
-
-function wasmIcon(wasmId, extraStyle) {
-  const svg = WASM_ICONS[wasmId] || "";
-  return svg.replace("<svg ", `<svg style="color:var(--gold);${extraStyle || ""}" `);
-}
 
 function roleBadge(role) {
   if (!role || !ROLE_LABELS[role]) return "";
@@ -94,7 +103,7 @@ function buildResponsesMap() {
 function renderWasmLegend() {
   el.wasmLegend.innerHTML = state.data.poets.map(poet =>
     `<button class="wasm-legend-item" data-poet="${poet.id}" aria-label="عرض قصائد ${poet.name}">
-      ${wasmIcon(poet.wasm)}
+      ${poetMark(poet, "width:40px;height:40px;")}
       <span>${poet.name}</span>
     </button>`
   ).join("");
@@ -103,7 +112,7 @@ function renderWasmLegend() {
 function renderFilterPills() {
   const poetPills = state.data.poets.map(poet =>
     `<button class="pill" data-poet="${poet.id}">
-      ${wasmIcon(poet.wasm, "width:16px;height:16px;")}
+      ${poetMark(poet, "width:16px;height:16px;")}
       ${poet.name}
     </button>`
   ).join("");
@@ -165,7 +174,7 @@ function renderGridView() {
     const hasResponses = !!state.responsesMap[poem.id];
     return `<article class="poem-card" data-poem="${poem.id}" tabindex="0" role="button">
       <div class="poem-card-tag">
-        ${wasmIcon(poet.wasm, "width:14px;height:14px;")} ${poet.name}
+        ${poetMark(poet, "width:14px;height:14px;")} ${poet.name}
         ${roleBadge(poem.role)}
         ${hasResponses ? `<span class="role-badge role-responded">تمت مجاراتها</span>` : ""}
       </div>
@@ -182,7 +191,7 @@ function renderBioBanner() {
   const poet = state.data.poets.find(p => p.id === state.activePoet);
   if (!poet) return "";
   return `<div class="poet-bio-banner">
-    ${wasmIcon(poet.wasm)}
+    ${poetMark(poet, "width:52px;height:52px;")}
     <div><h2>${poet.name}</h2><p>${poet.bio}</p></div>
   </div>`;
 }
@@ -200,7 +209,6 @@ function showPoem(poemId) {
     ? `<button class="back-btn" onclick="history.back()">← رجوع</button>`
     : `<button class="back-btn" data-return-to="${poet.id}">← الرجوع إلى قصائد ${poet.name}</button>`;
 
-  // ردود على هذه القصيدة
   const responseIds = state.responsesMap[poemId] || [];
   let responsesSection = "";
   if (responseIds.length > 0) {
@@ -208,7 +216,7 @@ function showPoem(poemId) {
       const r = findPoem(rid);
       if (!r) return "";
       return `<button class="mujarat-goto" data-poem-id="${r.poem.id}">
-        ${r.isExternal ? "" : wasmIcon(r.poet.wasm, "width:13px;height:13px;")}
+        ${r.isExternal ? "" : poetMark(r.poet, "width:13px;height:13px;")}
         ${r.poet.name} — ${r.poem.title} ${roleBadge(r.poem.role)}
       </button>`;
     }).join("");
@@ -219,7 +227,6 @@ function showPoem(poemId) {
       </div>`;
   }
 
-  // وضع السلسلة: إذا القصيدة رد/مجاراة ومرتبطة بأصل
   const isChain = (poem.role === "رد" || poem.role === "مجاراة") && poem.mujarat?.respondingToId;
   const originalFound = isChain ? findPoem(poem.mujarat.respondingToId) : null;
 
@@ -266,7 +273,7 @@ function buildChainView(backBtn, origFound, resp, responsesSection) {
       <div class="chain-poem">
         <div class="chain-poet-label">
           ${roleBadge(respPoem.role)}
-          ${wasmIcon(respPoet.wasm, "width:16px;height:16px;")}
+          ${poetMark(respPoet, "width:16px;height:16px;")}
           ${respPoet.name}
           ${respPoem.date ? `<span class="poem-meta">· ${respPoem.date}</span>` : ""}
         </div>
@@ -284,7 +291,7 @@ function buildNormalView(backBtn, poet, poem, isExternal, responsesSection) {
     <div class="poem-header">
       ${isExternal
         ? `<span class="role-badge role-بدع" style="font-size:1rem;padding:4px 14px">بدع</span>`
-        : wasmIcon(poet.wasm)}
+        : poetMark(poet, "width:44px;height:44px;")}
       <h2>${poem.title}</h2>
       <div class="poem-meta">${poet.name}${poem.date ? " · " + poem.date : ""}${poem.meter ? " · " + poem.meter : ""}</div>
       ${roleBadge(poem.role)}
