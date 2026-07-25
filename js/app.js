@@ -10,16 +10,26 @@ const WASM_ICONS = {
   "wasm-5": `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"> <polyline points="6,28 14,12 20,28 26,12 34,28" /> </svg>`
 };
 
+/* تنقية أي نص قبل حقنه بالـ HTML — يمنع تنفيذ أي وسم/سكربت مخفي داخل عنوان أو بيت شعري */
+function esc(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 function wasmIcon(wasmId, extraStyle) {
   const svg = WASM_ICONS[wasmId] || "";
   return svg.replace("<svg ", `<svg style="color:var(--gold);${extraStyle || ""}" `);
 }
 
-/* صورة الشاعر إن وُجدت، وإلا يرجع للوسم القديم تلقائياً */
 function poetMark(poet, sizeStyle) {
   const style = sizeStyle || "width:34px;height:34px;";
   if (poet.photo) {
-    return `<img src="${poet.photo}" class="poet-photo" style="${style}" alt="${poet.name}" />`;
+    return `<img src="${esc(poet.photo)}" class="poet-photo" style="${style}" alt="${esc(poet.name)}" />`;
   }
   return wasmIcon(poet.wasm, style);
 }
@@ -58,7 +68,7 @@ async function init() {
     if (!res.ok) throw new Error("HTTP " + res.status);
     state.data = await res.json();
   } catch (err) {
-    el.poemsGrid.innerHTML = `<div class="empty-state">تعذّر تحميل بيانات الديوان.<br><small style="opacity:0.7">${err.message}</small></div>`;
+    el.poemsGrid.innerHTML = `<div class="empty-state">تعذّر تحميل بيانات الديوان.<br><small style="opacity:0.7">${esc(err.message)}</small></div>`;
     return;
   }
   el.subtitle.textContent = state.data.site.subtitle || "";
@@ -71,7 +81,6 @@ async function init() {
   window.addEventListener("hashchange", handleRoute);
 }
 
-/* ---- كل القصائد (داخلية + خارجية) ---- */
 function getAllPoemsFlat() {
   const out = [];
   state.data.poets.forEach(poet => {
@@ -87,7 +96,6 @@ function findPoem(poemId) {
   return getAllPoemsFlat().find(({ poem }) => poem.id === poemId) || null;
 }
 
-/* ---- خريطة الردود: poemId → [قصائد ترد عليها] ---- */
 function buildResponsesMap() {
   const map = {};
   getAllPoemsFlat().forEach(({ poem }) => {
@@ -102,18 +110,18 @@ function buildResponsesMap() {
 
 function renderWasmLegend() {
   el.wasmLegend.innerHTML = state.data.poets.map(poet =>
-    `<button class="wasm-legend-item" data-poet="${poet.id}" aria-label="عرض قصائد ${poet.name}">
+    `<button class="wasm-legend-item" data-poet="${esc(poet.id)}" aria-label="عرض قصائد ${esc(poet.name)}">
       ${poetMark(poet, "width:40px;height:40px;")}
-      <span>${poet.name}</span>
+      <span>${esc(poet.name)}</span>
     </button>`
   ).join("");
 }
 
 function renderFilterPills() {
   const poetPills = state.data.poets.map(poet =>
-    `<button class="pill" data-poet="${poet.id}">
+    `<button class="pill" data-poet="${esc(poet.id)}">
       ${poetMark(poet, "width:16px;height:16px;")}
-      ${poet.name}
+      ${esc(poet.name)}
     </button>`
   ).join("");
   el.filterPills.innerHTML = `<button class="pill active" data-poet="all">الكل</button>${poetPills}`;
@@ -172,14 +180,14 @@ function renderGridView() {
 
   const cards = items.map(({ poet, poem }) => {
     const hasResponses = !!state.responsesMap[poem.id];
-    return `<article class="poem-card" data-poem="${poem.id}" tabindex="0" role="button">
+    return `<article class="poem-card" data-poem="${esc(poem.id)}" tabindex="0" role="button">
       <div class="poem-card-tag">
-        ${poetMark(poet, "width:14px;height:14px;")} ${poet.name}
+        ${poetMark(poet, "width:14px;height:14px;")} ${esc(poet.name)}
         ${roleBadge(poem.role)}
         ${hasResponses ? `<span class="role-badge role-responded">تمت مجاراتها</span>` : ""}
       </div>
-      <h3>${poem.title}</h3>
-      <p>${poem.verses?.[0] ? poem.verses[0].sadr : ""}</p>
+      <h3>${esc(poem.title)}</h3>
+      <p>${poem.verses?.[0] ? esc(poem.verses[0].sadr) : ""}</p>
     </article>`;
   }).join("");
 
@@ -192,7 +200,7 @@ function renderBioBanner() {
   if (!poet) return "";
   return `<div class="poet-bio-banner">
     ${poetMark(poet, "width:52px;height:52px;")}
-    <div><h2>${poet.name}</h2><p>${poet.bio}</p></div>
+    <div><h2>${esc(poet.name)}</h2><p>${esc(poet.bio)}</p></div>
   </div>`;
 }
 
@@ -207,7 +215,7 @@ function showPoem(poemId) {
 
   const backBtn = isExternal
     ? `<button class="back-btn" onclick="history.back()">← رجوع</button>`
-    : `<button class="back-btn" data-return-to="${poet.id}">← الرجوع إلى قصائد ${poet.name}</button>`;
+    : `<button class="back-btn" data-return-to="${esc(poet.id)}">← الرجوع إلى قصائد ${esc(poet.name)}</button>`;
 
   const responseIds = state.responsesMap[poemId] || [];
   let responsesSection = "";
@@ -215,9 +223,9 @@ function showPoem(poemId) {
     const links = responseIds.map(rid => {
       const r = findPoem(rid);
       if (!r) return "";
-      return `<button class="mujarat-goto" data-poem-id="${r.poem.id}">
+      return `<button class="mujarat-goto" data-poem-id="${esc(r.poem.id)}">
         ${r.isExternal ? "" : poetMark(r.poet, "width:13px;height:13px;")}
-        ${r.poet.name} — ${r.poem.title} ${roleBadge(r.poem.role)}
+        ${esc(r.poet.name)} — ${esc(r.poem.title)} ${roleBadge(r.poem.role)}
       </button>`;
     }).join("");
     responsesSection = `
@@ -240,9 +248,9 @@ function showPoem(poemId) {
 function buildVerses(verses) {
   return (verses || []).map(v => `
     <div class="verse">
-      <span class="sadr">${v.sadr}</span>
+      <span class="sadr">${esc(v.sadr)}</span>
       <span class="divider"></span>
-      <span class="ajz">${v.ajz}</span>
+      <span class="ajz">${esc(v.ajz)}</span>
     </div>`).join("");
 }
 
@@ -257,27 +265,27 @@ function buildChainView(backBtn, origFound, resp, responsesSection) {
     <div class="poem-chain">
       <div class="chain-poem">
         <div class="chain-poet-label">
-          ${roleBadge("بدع")} ${origPoet.name}
-          ${origPoem.date ? `<span class="poem-meta">· ${origPoem.date}</span>` : ""}
+          ${roleBadge("بدع")} ${esc(origPoet.name)}
+          ${origPoem.date ? `<span class="poem-meta">· ${esc(origPoem.date)}</span>` : ""}
         </div>
-        <h3 class="chain-title">${origPoem.title}</h3>
+        <h3 class="chain-title">${esc(origPoem.title)}</h3>
         ${origVerses
           ? `<div class="verses chain-verses">${origVerses}</div>`
           : `<p class="chain-no-verses">لم تُحفظ أبيات هذه القصيدة في الديوان</p>`}
       </div>
 
       <div class="chain-divider">
-        <span>${respPoem.role === "رد" ? "ردّ " + respPoet.name : "مجاراة " + respPoet.name}</span>
+        <span>${respPoem.role === "رد" ? "ردّ " + esc(respPoet.name) : "مجاراة " + esc(respPoet.name)}</span>
       </div>
 
       <div class="chain-poem">
         <div class="chain-poet-label">
           ${roleBadge(respPoem.role)}
           ${poetMark(respPoet, "width:16px;height:16px;")}
-          ${respPoet.name}
-          ${respPoem.date ? `<span class="poem-meta">· ${respPoem.date}</span>` : ""}
+          ${esc(respPoet.name)}
+          ${respPoem.date ? `<span class="poem-meta">· ${esc(respPoem.date)}</span>` : ""}
         </div>
-        <h3 class="chain-title">${respPoem.title}</h3>
+        <h3 class="chain-title">${esc(respPoem.title)}</h3>
         <div class="verses chain-verses">${respVerses}</div>
       </div>
     </div>
@@ -292,8 +300,8 @@ function buildNormalView(backBtn, poet, poem, isExternal, responsesSection) {
       ${isExternal
         ? `<span class="role-badge role-بدع" style="font-size:1rem;padding:4px 14px">بدع</span>`
         : poetMark(poet, "width:44px;height:44px;")}
-      <h2>${poem.title}</h2>
-      <div class="poem-meta">${poet.name}${poem.date ? " · " + poem.date : ""}${poem.meter ? " · " + poem.meter : ""}</div>
+      <h2>${esc(poem.title)}</h2>
+      <div class="poem-meta">${esc(poet.name)}${poem.date ? " · " + esc(poem.date) : ""}${poem.meter ? " · " + esc(poem.meter) : ""}</div>
       ${roleBadge(poem.role)}
     </div>
     <div class="verses">${versesHtml}</div>
