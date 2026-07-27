@@ -9,7 +9,6 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;line-height:1.6;padding:16px;max-width:700px;margin-inline:auto}
 h1{font-size:1.3rem;margin-bottom:2px}
-h2{font-size:1rem;margin:0 0 12px;color:var(--gold)}
 p.hint{color:var(--text-muted);font-size:.82rem;margin:4px 0 0}
 label{display:block;margin:14px 0 5px;font-size:.88rem;color:var(--text-muted)}
 input[type=text],select,textarea{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px;font-size:.93rem;font-family:inherit}
@@ -25,7 +24,7 @@ legend{padding:0 6px;color:var(--gold);font-size:.88rem}
 .verse-row button{flex:0 0 auto;padding:7px 9px;margin-top:1px}
 .verse-num{flex:0 0 auto;color:var(--text-faint);font-size:.75rem;padding-top:11px;min-width:20px;text-align:center}
 .row{display:flex;gap:8px}.row>*{flex:1}
-.hidden-section{display:none}
+.hidden-section{display:none !important}
 .mode-tabs{display:flex;margin-bottom:10px}
 .mode-tab{flex:1;padding:9px;text-align:center;background:var(--surface);border:1px solid var(--border);cursor:pointer;font-family:inherit;color:var(--text-muted);font-size:.88rem}
 .mode-tab:first-child{border-radius:8px 0 0 8px}
@@ -44,11 +43,14 @@ legend{padding:0 6px;color:var(--gold);font-size:.88rem}
 .role-pill.active-رد{background:var(--sage);color:#0d1a0f;border-color:var(--sage)}
 .role-pill.active-مجاراة{background:var(--sky);color:#0a1520;border-color:var(--sky)}
 .role-pill:not([class*=active]):hover{border-color:var(--gold);color:var(--text)}
-/* settings toggle */
 details{border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:14px}
 summary{cursor:pointer;color:var(--text-muted);font-size:.85rem;list-style:none}
 summary::-webkit-details-marker{display:none}
 summary::before{content:"⚙️ ";margin-left:4px}
+.found-badge{display:inline-block;background:var(--sage);color:#0d1a0f;border-radius:6px;padding:2px 10px;font-size:.8rem;margin-top:6px}
+.notfound-badge{display:inline-block;background:var(--surface-2);color:var(--text-faint);border:1px dashed var(--border);border-radius:6px;padding:2px 10px;font-size:.8rem;margin-top:6px}
+.toggle-add-missing{margin-top:10px;background:none;border:1px dashed var(--gold);color:var(--gold);width:100%}
+.new-poet-fields,.mujarat-fields,.add-missing-fields{margin-top:10px;padding:12px;background:rgba(201,162,39,.05);border:1px dashed var(--border);border-radius:8px}
 </style>
 </head>
 <body>
@@ -56,14 +58,13 @@ summary::before{content:"⚙️ ";margin-left:4px}
 <h1>ديوان آل السويلم</h1>
 <p class="hint">إضافة قصائد مباشرة بدون تعديل يدوي على الملفات</p>
 
-<!-- إعدادات GitHub -->
 <details id="settings-panel">
   <summary>إعدادات GitHub</summary>
   <label>GitHub Token (يُحفظ على جهازك فقط)</label>
-  <input type="password" id="gh-token" placeholder="ghp_..." />
-  <p class="hint">اضغط <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=DiWan" target="_blank" style="color:var(--gold)">هنا</a> لإنشاء token جديد — اختر فقط <b>public_repo</b></p>
+  <input type="password" id="gh-token" placeholder="github_pat_..."/>
+  <p class="hint">اضغط <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" style="color:var(--gold)">هنا</a> لإنشاء fine-grained token جديد — Repository access: Only select repositories (اختر الديوان) — Permissions → Contents: Read and write</p>
   <label>المستودع</label>
-  <input type="text" id="gh-repo" placeholder="xNaiif/Diwan-alsuwailem" />
+  <input type="text" id="gh-repo" placeholder="xNaiif/Diwan-alsuwailem"/>
   <div style="margin-top:10px;display:flex;gap:8px">
     <button onclick="saveSettings()" class="primary">حفظ الإعدادات</button>
     <button onclick="testConnection()">اختبار الاتصال</button>
@@ -77,31 +78,26 @@ summary::before{content:"⚙️ ";margin-left:4px}
 
 <form id="poem-form" style="display:none">
 
-  <!-- نوع الإضافة -->
   <fieldset>
     <legend>نوع الإضافة</legend>
-    <div class="mode-tabs" style="margin-bottom:0">
+    <div class="mode-tabs" style="margin-bottom:0" id="add-mode-tabs">
       <button type="button" class="mode-tab active" onclick="setAddMode('internal')">قصيدة لشاعر السويلم</button>
       <button type="button" class="mode-tab" onclick="setAddMode('external')">بديعة شاعر خارجي</button>
     </div>
   </fieldset>
 
-  <!-- قسم الشاعر الداخلي -->
+  <!-- ================= قسم شاعر السويلم ================= -->
   <div id="internal-section">
     <label>الشاعر</label>
-    <select id="poet-select" onchange="toggleNewPoetFields()"></select>
+    <select id="poet-select"></select>
 
-    <!-- حقول شاعر جديد -->
-    <div id="new-poet-fields" class="hidden-section" style="margin-top:10px">
-      <fieldset style="border-color:var(--sage)">
-        <legend style="color:var(--sage)">بيانات الشاعر الجديد</legend>
-        <label>الاسم الكامل</label>
-        <input type="text" id="new-poet-name" placeholder="مثال: ضيف الله السويلم"/>
-        <label>نبذة مختصرة (اختياري)</label>
-        <textarea id="new-poet-bio" placeholder="تعريف مختصر بالشاعر وأسلوبه…" style="min-height:70px"></textarea>
-        <label>الوسم (الرمز المرئي في الموقع)</label>
-        <select id="new-poet-wasm"></select>
-      </fieldset>
+    <div id="new-poet-fields" class="new-poet-fields hidden-section">
+      <label>الاسم الكامل</label>
+      <input type="text" id="new-poet-name" placeholder="مثال: ضيف الله السويلم"/>
+      <label>نبذة مختصرة</label>
+      <textarea id="new-poet-bio" placeholder="تعريف مختصر بالشاعر وأسلوبه…" style="min-height:70px"></textarea>
+      <label>الوسم (الرمز المرئي في الموقع)</label>
+      <select id="new-poet-wasm"></select>
     </div>
 
     <label>دور القصيدة</label>
@@ -112,47 +108,39 @@ summary::before{content:"⚙️ ";margin-left:4px}
       <button type="button" class="role-pill" data-role="مجاراة" onclick="setRole('مجاراة')">مجاراة — يجاري قصيدة</button>
     </div>
 
-    <!-- مجاراة/رد: القصيدة المرجع -->
     <div id="mujarat-ref-section" class="hidden-section">
       <fieldset style="border-color:var(--gold)">
         <legend>القصيدة الأصلية (البدع)</legend>
-        <label>اختر القصيدة</label>
-        <select id="mujarat-poem-id" onchange="onMujaratSelect()">
-          <option value="">— اختر —</option>
-        </select>
+        <label>ابحث بالاسم أو عنوان القصيدة</label>
+        <input type="text" id="mujarat-search" list="poem-datalist" placeholder="اكتب اسم الشاعر أو عنوان القصيدة…" oninput="onMujaratSearch()"/>
+        <datalist id="poem-datalist"></datalist>
+        <div id="mujarat-found-badge"></div>
 
-        <!-- يظهر فقط عند اختيار "شاعر خارجي" -->
-        <div id="external-poem-fields" class="hidden-section" style="margin-top:12px">
-          <div class="row">
-            <div>
-              <label>اسم الشاعر</label>
-              <input type="text" id="ext-ref-poet-name" placeholder="مثال: حبيب العازمي"/>
-            </div>
-            <div>
-              <label>عنوان قصيدته</label>
-              <input type="text" id="ext-ref-poem-title" placeholder="عنوان القصيدة"/>
-            </div>
-          </div>
-          <label>أبيات قصيدته (اختياري — تظهر فوق ردّك في الموقع)</label>
-          <textarea id="ext-ref-poem-verses" class="paste-area"
-            placeholder="الصق أبياته هنا — كل سطر = نصف بيت&#10;لو ما عندك الأبيات اتركه فاضي"
-            style="min-height:160px"></textarea>
+        <button type="button" class="toggle-add-missing" onclick="toggleAddMissing()">القصيدة مو موجودة بالديوان؟ أضفها الآن ↓</button>
+
+        <div id="add-missing-fields" class="add-missing-fields hidden-section">
+          <label>اسم الشاعر (الأصلي/الخارجي)</label>
+          <input type="text" id="missing-poet-name" placeholder="مثال: حبيب العازمي"/>
+          <label>عنوان قصيدته</label>
+          <input type="text" id="missing-poem-title" placeholder="عنوان القصيدة"/>
+          <label>أبياته (اختياري — تظهر فوق ردّك بالموقع)</label>
+          <textarea id="missing-poem-verses" class="paste-area" placeholder="الصق أبياته هنا — كل سطر = نصف بيت. اتركه فاضي لو ما عندك الأبيات" style="min-height:140px"></textarea>
         </div>
       </fieldset>
     </div>
   </div>
 
-  <!-- قسم الشاعر الخارجي -->
+  <!-- ================= قسم شاعر خارجي مستقل ================= -->
   <div id="external-section" class="hidden-section">
     <fieldset>
-      <legend>بديعة شاعر خارجي (مرجع فقط)</legend>
+      <legend>بديعة شاعر خارجي (مرجع فقط، بدون ربط برد)</legend>
       <label>اسم الشاعر</label>
       <input type="text" id="ext-poet-name" placeholder="مثال: حبيب العازمي"/>
-      <p class="hint">لو الشاعر موجود مسبقاً في القائمة سيُضاف له، وإلا يُنشأ شاعر جديد</p>
+      <p class="hint">لو الشاعر موجود مسبقاً بالقائمة، يُضاف له. وإلا يُنشأ شاعر جديد</p>
     </fieldset>
   </div>
 
-  <!-- بيانات القصيدة -->
+  <!-- ================= بيانات القصيدة ================= -->
   <fieldset>
     <legend>بيانات القصيدة</legend>
     <label>عنوان القصيدة</label>
@@ -163,10 +151,10 @@ summary::before{content:"⚙️ ";margin-left:4px}
     </div>
   </fieldset>
 
-  <!-- الأبيات -->
+  <!-- ================= الأبيات ================= -->
   <fieldset>
     <legend>الأبيات</legend>
-    <p class="hint" id="ext-verses-note" style="display:none">الأبيات اختيارية للشعراء الخارجيين — تقدر تتركها فاضية</p>
+    <p class="hint" id="ext-verses-note" style="display:none">الأبيات اختيارية للشعراء الخارجيين</p>
     <div class="mode-tabs">
       <button type="button" class="mode-tab active" onclick="setVerseMode('manual')">بيت بيت</button>
       <button type="button" class="mode-tab" onclick="setVerseMode('paste')">لصق القصيدة كاملة</button>
@@ -179,7 +167,7 @@ summary::before{content:"⚙️ ";margin-left:4px}
     </div>
 
     <div class="mode-panel" id="mode-paste">
-      <p class="hint">كل سطر = نصف بيت. الفردي صدر، الزوجي عجز. السطور الفارغة تُتجاهل.</p>
+      <p class="hint">كل سطر = نصف بيت. الفردي صدر، الزوجي عجز.</p>
       <textarea class="paste-area" id="paste-area" placeholder="الصق القصيدة هنا…"></textarea>
       <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
         <button type="button" class="sage" onclick="parsePaste()">← تحليل وتقسيم</button>
@@ -192,15 +180,12 @@ summary::before{content:"⚙️ ";margin-left:4px}
     </div>
   </fieldset>
 
-  <!-- أزرار النشر -->
   <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
     <button type="button" class="primary" onclick="publishDirect()">🚀 نشر مباشرة على GitHub</button>
     <button type="button" class="sky" onclick="generateSnippet()">📋 نسخ الكود فقط</button>
   </div>
-
 </form>
 
-<!-- ناتج الكود -->
 <div id="output-wrap">
   <p id="output-instructions" class="hint" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;line-height:1.8;margin-top:12px"></p>
   <textarea id="output" readonly style="margin-top:8px;min-height:180px"></textarea>
@@ -211,430 +196,412 @@ summary::before{content:"⚙️ ";margin-left:4px}
   <p id="copy-status" class="hint"></p>
 </div>
 
-<!-- حالة النشر -->
 <div id="publish-status" class="status-box"></div>
 
 <script>
-/* ===== إعدادات ===== */
 const SETTINGS_KEY = 'diwan_settings';
-let settings = { token: '', repo: 'xNaiif/Diwan-alsuwailem' };
+const WASM_OPTIONS = ['wasm-1','wasm-2','wasm-3','wasm-4','wasm-5'];
+let settings = { token:'', repo:'xNaiif/Diwan-alsuwailem' };
 let diwan = null;
-let addMode = 'internal';     // internal | external
+let addMode = 'internal';
 let currentRole = '';
 let verseMode = 'manual';
+let poemLookup = {};        // "الشاعر — العنوان" -> poemId
+let mujaratResolvedId = ''; // آخر معرّف اتأكد منه البحث
 
-function loadSettings() {
-  try { settings = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || settings; } catch {}
+/* ===== إعدادات ===== */
+function loadSettings(){
+  try{ settings = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || settings; }catch{}
   document.getElementById('gh-token').value = settings.token || '';
   document.getElementById('gh-repo').value = settings.repo || '';
 }
-
-function saveSettings() {
+function saveSettings(){
   settings.token = document.getElementById('gh-token').value.trim();
   settings.repo = document.getElementById('gh-repo').value.trim() || 'xNaiif/Diwan-alsuwailem';
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
   showConnStatus('تم الحفظ ✓', true);
 }
-
-async function testConnection() {
+async function testConnection(){
   saveSettings();
-  if (!settings.token) { showConnStatus('أضف GitHub Token أولاً', false); return; }
-  try {
+  if(!settings.token){ showConnStatus('أضف GitHub Token أولاً', false); return; }
+  try{
     const res = await fetch(`https://api.github.com/repos/${settings.repo}`, {
-      headers: { 'Authorization': `token ${settings.token}`, 'Accept': 'application/vnd.github.v3+json' }
+      headers:{ 'Authorization':`token ${settings.token}`, 'Accept':'application/vnd.github.v3+json' }
     });
-    if (res.ok) {
-      const d = await res.json();
-      showConnStatus(`✓ اتصال ناجح — المستودع: ${d.full_name}`, true);
-    } else {
-      showConnStatus(`خطأ ${res.status} — تحقق من التوكن والمستودع`, false);
-    }
-  } catch (e) { showConnStatus('فشل الاتصال: ' + e.message, false); }
+    if(res.ok){ const d = await res.json(); showConnStatus(`✓ اتصال ناجح — المستودع: ${d.full_name}`, true); }
+    else showConnStatus(`خطأ ${res.status} — تحقق من التوكن والمستودع`, false);
+  }catch(e){ showConnStatus('فشل الاتصال: '+e.message, false); }
 }
-
-function showConnStatus(msg, ok) {
+function showConnStatus(msg, ok){
   const el = document.getElementById('conn-status');
-  el.textContent = msg;
-  el.className = 'status-box ' + (ok ? 'status-ok' : 'status-err');
-  el.style.display = 'block';
+  el.textContent = msg; el.className = 'status-box ' + (ok ? 'status-ok' : 'status-err'); el.style.display='block';
 }
 
 /* ===== تحميل البيانات ===== */
-async function init() {
+async function init(){
   loadSettings();
-  try {
-    const url = `https://raw.githubusercontent.com/${settings.repo || 'xNaiif/Diwan-alsuwailem'}/main/data/diwan.json?t=${Date.now()}`;
+  try{
+    const url = `https://raw.githubusercontent.com/${settings.repo||'xNaiif/Diwan-alsuwailem'}/main/data/diwan.json?t=${Date.now()}`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if(!res.ok) throw new Error('HTTP '+res.status);
     diwan = await res.json();
     afterLoad();
-  } catch (e) {
+  }catch(e){
     document.getElementById('status').innerHTML =
-      `تعذّر تحميل البيانات (${e.message}). تأكد من إعدادات GitHub أو <button onclick="retryInit()" style="background:none;border:none;color:var(--gold);cursor:pointer;text-decoration:underline">أعد المحاولة</button>`;
+      `تعذّر تحميل البيانات (${e.message}). <button onclick="retryInit()" style="background:none;border:none;color:var(--gold);cursor:pointer;text-decoration:underline">أعد المحاولة</button>`;
   }
 }
+function retryInit(){ document.getElementById('status').textContent='يعيد المحاولة…'; init(); }
 
-function retryInit() { document.getElementById('status').textContent = 'يعيد المحاولة…'; init(); }
+function afterLoad(){
+  document.getElementById('loader').style.display='none';
+  document.getElementById('poem-form').style.display='block';
 
-function afterLoad() {
-  document.getElementById('loader').style.display = 'none';
-  document.getElementById('poem-form').style.display = 'block';
-
-  // قائمة الشعراء الداخليين + خيار إضافة شاعر جديد
+  // قائمة الشعراء + خيار إضافة شاعر جديد
   const pSel = document.getElementById('poet-select');
-  pSel.innerHTML = diwan.poets.map(p => `<option value="${p.id}">${p.name}</option>`).join('') +
-    `<option value="__new__">+ إضافة شاعر جديد من آل السويلم</option>`;
+  pSel.innerHTML = diwan.poets.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')
+    + `<option value="__new__">+ إضافة شاعر جديد من آل السويلم</option>`;
+  pSel.onchange = toggleNewPoetFields;
+  toggleNewPoetFields(); // حالة أولية صحيحة
 
   // وسوم متاحة للشاعر الجديد
-  const usedWasms = diwan.poets.map(p => p.wasm);
-  const allWasms = ['wasm-1','wasm-2','wasm-3','wasm-4','wasm-5'];
-  const freeWasms = allWasms.filter(w => !usedWasms.includes(w));
+  const usedWasms = diwan.poets.map(p=>p.wasm);
+  const freeWasms = WASM_OPTIONS.filter(w=>!usedWasms.includes(w));
   document.getElementById('new-poet-wasm').innerHTML = freeWasms.length
-    ? freeWasms.map(w => `<option value="${w}">${w}</option>`).join('')
-    : `<option value="">لا يوجد وسم متاح — تواصل مع المطور لإضافة وسم جديد</option>`;
+    ? freeWasms.map(w=>`<option value="${w}">${w}</option>`).join('')
+    : `<option value="">لا يوجد وسم متاح</option>`;
 
-  // قائمة كل القصائد للمجاراة (داخلية + خارجية + شاعر خارجي جديد)
-  const mSel = document.getElementById('mujarat-poem-id');
-  mSel.innerHTML = `<option value="">— اختر —</option>`;
-  diwan.poets.forEach(p => p.poems.forEach(poem => {
-    mSel.innerHTML += `<option value="${poem.id}">${p.name} — ${poem.title}</option>`;
+  // فهرس بحث كل القصائد (داخلية + خارجية)
+  poemLookup = {};
+  const dl = document.getElementById('poem-datalist');
+  let opts = '';
+  diwan.poets.forEach(p=>p.poems.forEach(poem=>{
+    const key = `${p.name} — ${poem.title}`;
+    poemLookup[key] = poem.id;
+    opts += `<option value="${key}"></option>`;
   }));
-  (diwan.externalPoets || []).forEach(p => p.poems.forEach(poem => {
-    mSel.innerHTML += `<option value="${poem.id}">[خارجي] ${p.name} — ${poem.title}</option>`;
+  (diwan.externalPoets||[]).forEach(p=>p.poems.forEach(poem=>{
+    const key = `${p.name} — ${poem.title} (خارجي)`;
+    poemLookup[key] = poem.id;
+    opts += `<option value="${key}"></option>`;
   }));
-  mSel.innerHTML += `<option value="__external__">──── شاعر من خارج الديوان (أضفه الآن) ────</option>`;
+  dl.innerHTML = opts;
 
   addVerseRow(); addVerseRow();
 }
 
-/* ===== أوضاع الإضافة ===== */
-function toggleNewPoetFields() {
+function toggleNewPoetFields(){
   const isNew = document.getElementById('poet-select').value === '__new__';
-  document.getElementById('new-poet-fields').style.display = isNew ? '' : 'none';
+  document.getElementById('new-poet-fields').classList.toggle('hidden-section', !isNew);
 }
 
-function onMujaratSelect() {
-  const val = document.getElementById('mujarat-poem-id').value;
-  document.getElementById('external-poem-fields').style.display =
-    val === '__external__' ? '' : 'none';
-}
-
-function setAddMode(mode) {
+/* ===== وضع الإضافة ===== */
+function setAddMode(mode){
   addMode = mode;
-  document.querySelectorAll('#poem-form .mode-tab').forEach((t, i) => {
-    t.classList.toggle('active', (i === 0) === (mode === 'internal'));
+  document.querySelectorAll('#add-mode-tabs .mode-tab').forEach((t,i)=>{
+    t.classList.toggle('active', (i===0) === (mode==='internal'));
   });
-  document.getElementById('internal-section').style.display = mode === 'internal' ? '' : 'none';
-  document.getElementById('external-section').style.display = mode === 'external' ? '' : 'none';
-  document.getElementById('ext-verses-note').style.display = mode === 'external' ? '' : 'none';
-  if (mode === 'external') { currentRole = 'بدع'; updateRolePills(); }
+  document.getElementById('internal-section').classList.toggle('hidden-section', mode!=='internal');
+  document.getElementById('external-section').classList.toggle('hidden-section', mode!=='external');
+  document.getElementById('ext-verses-note').style.display = mode==='external' ? '' : 'none';
+  if(mode==='external'){ currentRole='بدع'; updateRolePills(); }
 }
 
-function setRole(role) {
+/* ===== الدور (عادي/بدع/رد/مجاراة) ===== */
+function setRole(role){
   currentRole = role;
   updateRolePills();
-  document.getElementById('mujarat-ref-section').style.display =
-    (role === 'رد' || role === 'مجاراة') ? '' : 'none';
+  const showRef = (role==='رد' || role==='مجاراة');
+  document.getElementById('mujarat-ref-section').classList.toggle('hidden-section', !showRef);
+  if(!showRef){
+    document.getElementById('mujarat-search').value = '';
+    mujaratResolvedId = '';
+    document.getElementById('mujarat-found-badge').innerHTML = '';
+    document.getElementById('add-missing-fields').classList.add('hidden-section');
+  }
+}
+function updateRolePills(){
+  document.querySelectorAll('.role-pill').forEach(btn=>{
+    const r = btn.dataset.role;
+    btn.className = 'role-pill' + (r===currentRole ? ` active-${r||'بدع'}` : '');
+  });
 }
 
-function updateRolePills() {
-  document.querySelectorAll('.role-pill').forEach(btn => {
-    const r = btn.dataset.role;
-    btn.className = 'role-pill' + (r === currentRole ? ` active-${r || 'بدع'}` : '');
-  });
+/* ===== البحث عن القصيدة الأصلية (رد/مجاراة) ===== */
+function onMujaratSearch(){
+  const val = document.getElementById('mujarat-search').value.trim();
+  const badge = document.getElementById('mujarat-found-badge');
+  if(poemLookup[val]){
+    mujaratResolvedId = poemLookup[val];
+    badge.innerHTML = `<span class="found-badge">✓ لُقيت — راح تُربط تلقائياً</span>`;
+    document.getElementById('add-missing-fields').classList.add('hidden-section');
+  } else {
+    mujaratResolvedId = '';
+    badge.innerHTML = val ? `<span class="notfound-badge">ما لُقيت — إذا متأكد إنها مو موجودة، اضغط الزر تحت</span>` : '';
+  }
+}
+function toggleAddMissing(){
+  const el = document.getElementById('add-missing-fields');
+  el.classList.toggle('hidden-section');
+  if(!el.classList.contains('hidden-section')){
+    // نعبّي العنوان تلقائياً من نص البحث لو المستخدم كاتب شي
+    const searchVal = document.getElementById('mujarat-search').value.trim();
+    if(searchVal && !document.getElementById('missing-poem-title').value){
+      document.getElementById('missing-poem-title').value = searchVal;
+    }
+  }
 }
 
 /* ===== إدخال الأبيات ===== */
-function setVerseMode(mode) {
+function setVerseMode(mode){
   verseMode = mode;
-  document.querySelectorAll('#mode-manual,#mode-paste').forEach(p => p.classList.remove('active'));
-  document.getElementById('mode-' + mode).classList.add('active');
-  document.querySelectorAll('fieldset:last-of-type .mode-tab').forEach((t, i) => {
-    t.classList.toggle('active', (i === 0) === (mode === 'manual'));
-  });
+  document.getElementById('mode-manual').classList.toggle('active', mode==='manual');
+  document.getElementById('mode-paste').classList.toggle('active', mode==='paste');
+  document.querySelectorAll('fieldset:has(#mode-manual) .mode-tab, fieldset:has(#mode-paste) .mode-tab').forEach(()=>{});
+  const tabs = document.querySelectorAll('#mode-manual').length ? null : null;
+  // تفعيل تبويب الأبيات تحديداً (الثاني بالصفحة)
+  const verseTabs = document.querySelectorAll('.mode-tabs')[1];
+  if(verseTabs){
+    verseTabs.querySelectorAll('.mode-tab').forEach((t,i)=>{
+      t.classList.toggle('active', (i===0) === (mode==='manual'));
+    });
+  }
 }
-
-function addVerseRow(sadr='', ajz='') {
+function addVerseRow(sadr='', ajz=''){
   const c = document.getElementById('verses-container');
-  const n = c.children.length + 1;
+  const n = c.children.length+1;
   const d = document.createElement('div');
-  d.className = 'verse-row';
+  d.className='verse-row';
   d.innerHTML = `<span class="verse-num">${n}</span>
     <input type="text" placeholder="الصدر" class="sadr-input" value="${esc(sadr)}"/>
     <input type="text" placeholder="العجز" class="ajz-input" value="${esc(ajz)}"/>
     <button type="button" onclick="this.parentElement.remove();renum('#verses-container .verse-num')">✕</button>`;
   c.appendChild(d);
 }
-
-function parsePaste() {
-  const lines = document.getElementById('paste-area').value.split('\n').map(l => l.trim()).filter(Boolean);
-  if (!lines.length) { alert('الصق القصيدة أولاً.'); return; }
-  const pairs = [];
-  for (let i = 0; i < lines.length; i += 2) pairs.push({ sadr: lines[i]||'', ajz: lines[i+1]||'' });
+function parsePaste(){
+  const lines = document.getElementById('paste-area').value.split('\n').map(l=>l.trim()).filter(Boolean);
+  if(!lines.length){ alert('الصق القصيدة أولاً.'); return; }
+  const pairs=[];
+  for(let i=0;i<lines.length;i+=2) pairs.push({sadr:lines[i]||'', ajz:lines[i+1]||''});
   document.getElementById('parse-count').textContent = `${pairs.length} بيت`;
   const pv = document.getElementById('parsed-verses');
-  pv.innerHTML = '';
-  pairs.forEach((v, i) => {
-    const d = document.createElement('div');
-    d.className = 'verse-row';
+  pv.innerHTML='';
+  pairs.forEach((v,i)=>{
+    const d=document.createElement('div');
+    d.className='verse-row';
     d.innerHTML = `<span class="verse-num">${i+1}</span>
       <input type="text" class="sadr-parsed" value="${esc(v.sadr)}" placeholder="الصدر"/>
       <input type="text" class="ajz-parsed" value="${esc(v.ajz)}" placeholder="العجز"/>
       <button type="button" onclick="this.parentElement.remove();renum('#parsed-verses .verse-num')">✕</button>`;
     pv.appendChild(d);
   });
-  document.getElementById('parsed-preview').style.display = 'block';
+  document.getElementById('parsed-preview').style.display='block';
 }
-
-function renum(sel) {
-  document.querySelectorAll(sel).forEach((e, i) => { e.textContent = i + 1; });
-}
-
-function getVerses() {
-  if (verseMode === 'paste') {
+function renum(sel){ document.querySelectorAll(sel).forEach((e,i)=>{ e.textContent=i+1; }); }
+function getVerses(){
+  if(verseMode==='paste'){
     return [...document.querySelectorAll('#parsed-verses .verse-row')]
-      .map(r => ({ sadr: r.querySelector('.sadr-parsed').value.trim(), ajz: r.querySelector('.ajz-parsed').value.trim() }))
-      .filter(v => v.sadr || v.ajz);
+      .map(r=>({sadr:r.querySelector('.sadr-parsed').value.trim(), ajz:r.querySelector('.ajz-parsed').value.trim()}))
+      .filter(v=>v.sadr||v.ajz);
   }
   return [...document.querySelectorAll('#verses-container .verse-row')]
-    .map(r => ({ sadr: r.querySelector('.sadr-input').value.trim(), ajz: r.querySelector('.ajz-input').value.trim() }))
-    .filter(v => v.sadr || v.ajz);
+    .map(r=>({sadr:r.querySelector('.sadr-input').value.trim(), ajz:r.querySelector('.ajz-input').value.trim()}))
+    .filter(v=>v.sadr||v.ajz);
 }
 
 /* ===== بناء بيانات القصيدة ===== */
-function buildPoemData() {
+function buildPoemData(){
   const title = document.getElementById('poem-title').value.trim();
-  if (!title) { alert('لازم تكتب عنوان القصيدة.'); return null; }
+  if(!title){ alert('لازم تكتب عنوان القصيدة.'); return null; }
   const verses = getVerses();
-  if (addMode === 'internal' && verses.length === 0) { alert('لازم تضيف بيت واحد على الأقل.'); return null; }
+  if(addMode==='internal' && verses.length===0){ alert('لازم تضيف بيت واحد على الأقل.'); return null; }
 
-  if (addMode === 'external') {
+  if(addMode==='external'){
     const extName = document.getElementById('ext-poet-name').value.trim();
-    if (!extName) { alert('لازم تكتب اسم الشاعر الخارجي.'); return null; }
-    return { type: 'external', poetName: extName, title, role: 'بدع',
-             date: document.getElementById('poem-date').value.trim(),
-             source: document.getElementById('poem-source').value.trim(), verses };
+    if(!extName){ alert('لازم تكتب اسم الشاعر الخارجي.'); return null; }
+    return {type:'external', poetName:extName, title, role:'بدع',
+             date:document.getElementById('poem-date').value.trim(),
+             source:document.getElementById('poem-source').value.trim(), verses};
   }
 
   const poetId = document.getElementById('poet-select').value;
-
-  // التحقق من بيانات الشاعر الجديد
-  if (poetId === '__new__') {
+  if(poetId==='__new__'){
     const newName = document.getElementById('new-poet-name').value.trim();
-    if (!newName) { alert('لازم تكتب اسم الشاعر الجديد.'); return null; }
+    if(!newName){ alert('لازم تكتب اسم الشاعر الجديد.'); return null; }
   }
 
-  const poem = { title, role: currentRole, meter: '',
-                 date: document.getElementById('poem-date').value.trim(),
-                 source: document.getElementById('poem-source').value.trim(), verses };
+  const poem = {title, role:currentRole, meter:'',
+                date:document.getElementById('poem-date').value.trim(),
+                source:document.getElementById('poem-source').value.trim(), verses};
 
-  if (currentRole === 'رد' || currentRole === 'مجاراة') {
-    const mujaratId = document.getElementById('mujarat-poem-id').value;
-
-    if (mujaratId === '__external__') {
-      // شاعر خارجي جديد — نجمع بياناته هنا وننشئه وقت التطبيق
-      const extPoetName = document.getElementById('ext-ref-poet-name').value.trim();
-      const extPoemTitle = document.getElementById('ext-ref-poem-title').value.trim();
-      if (!extPoetName || !extPoemTitle) {
-        alert('لازم تكتب اسم الشاعر الخارجي وعنوان قصيدته.'); return null;
-      }
+  if(currentRole==='رد' || currentRole==='مجاراة'){
+    const addingMissing = !document.getElementById('add-missing-fields').classList.contains('hidden-section');
+    if(addingMissing){
+      const mName = document.getElementById('missing-poet-name').value.trim();
+      const mTitle = document.getElementById('missing-poem-title').value.trim();
+      if(!mName || !mTitle){ alert('لازم تكتب اسم الشاعر وعنوان القصيدة الأصلية.'); return null; }
       poem.pendingExternal = {
-        poetName: extPoetName,
-        poemTitle: extPoemTitle,
-        versesRaw: document.getElementById('ext-ref-poem-verses').value.trim()
+        poetName:mName, poemTitle:mTitle,
+        versesRaw: document.getElementById('missing-poem-verses').value.trim()
       };
-      poem.mujarat = { respondingToPoet: extPoetName, respondingToTitle: extPoemTitle, respondingToId: '' };
-
-    } else {
-      // قصيدة موجودة في الديوان — ابحث عن بيانات الشاعر تلقائياً
-      const allPoems = [
-        ...diwan.poets.flatMap(p => p.poems.map(m => ({ poet: p, poem: m }))),
-        ...(diwan.externalPoets || []).flatMap(p => p.poems.map(m => ({ poet: p, poem: m })))
-      ];
-      const ref = allPoems.find(x => x.poem.id === mujaratId);
+      poem.mujarat = {respondingToPoet:mName, respondingToTitle:mTitle, respondingToId:''};
+    } else if(mujaratResolvedId){
+      const ref = findPoemById(diwan, mujaratResolvedId);
       poem.mujarat = {
         respondingToPoet: ref ? ref.poet.name : '',
         respondingToTitle: ref ? ref.poem.title : '',
-        respondingToId: mujaratId || ''
+        respondingToId: mujaratResolvedId
       };
+    } else {
+      alert('اختر القصيدة الأصلية من البحث، أو اضغط "أضفها الآن" لو مو موجودة.');
+      return null;
     }
   }
-  return { type: 'internal', poetId, poem };
+  return {type:'internal', poetId, poem};
 }
 
-/* ===== إضافة للنسخة المحلية من diwan ===== */
-function applyToLocalDiwan(data, diwanCopy) {
-  if (data.type === 'external') {
-    let extPoet = (diwanCopy.externalPoets || []).find(p => p.name === data.poetName);
-    if (!extPoet) {
-      extPoet = { id: 'ext-' + ((diwanCopy.externalPoets || []).length + 1), name: data.poetName, poems: [] };
-      if (!diwanCopy.externalPoets) diwanCopy.externalPoets = [];
+function findPoemById(d, id){
+  for(const p of d.poets) for(const poem of p.poems) if(poem.id===id) return {poet:p, poem};
+  for(const p of (d.externalPoets||[])) for(const poem of p.poems) if(poem.id===id) return {poet:p, poem};
+  return null;
+}
+
+/* ===== تطبيق على نسخة الديوان ===== */
+function applyToLocalDiwan(data, diwanCopy){
+  if(data.type==='external'){
+    let extPoet = (diwanCopy.externalPoets||[]).find(p=>p.name===data.poetName);
+    if(!extPoet){
+      if(!diwanCopy.externalPoets) diwanCopy.externalPoets=[];
+      extPoet = {id:'ext-'+(diwanCopy.externalPoets.length+1), name:data.poetName, poems:[]};
       diwanCopy.externalPoets.push(extPoet);
     }
-    const poem = { id: extPoet.id + '-poem-' + (extPoet.poems.length + 1),
-                   title: data.title, role: data.role, source: data.source };
-    if (data.verses.length) poem.verses = data.verses;
+    const poem = {id:extPoet.id+'-poem-'+(extPoet.poems.length+1), title:data.title, role:data.role, source:data.source};
+    if(data.verses.length) poem.verses = data.verses;
     extPoet.poems.push(poem);
     return poem;
-  } else {
-    let poet;
-    if (data.poetId === '__new__') {
-      const newId = 'poet-' + (diwanCopy.poets.length + 1);
-      poet = {
-        id: newId,
-        name: document.getElementById('new-poet-name').value.trim(),
-        wasm: document.getElementById('new-poet-wasm').value,
-        bio: document.getElementById('new-poet-bio').value.trim() || '',
-        poems: []
-      };
-      diwanCopy.poets.push(poet);
-    } else {
-      poet = diwanCopy.poets.find(p => p.id === data.poetId);
-    }
-
-    // لو فيه قصيدة خارجية جديدة تحتاج إنشاء أولاً
-    if (data.poem.pendingExternal) {
-      const ext = data.poem.pendingExternal;
-      delete data.poem.pendingExternal;
-
-      if (!diwanCopy.externalPoets) diwanCopy.externalPoets = [];
-      let extPoet = diwanCopy.externalPoets.find(p => p.name === ext.poetName);
-      if (!extPoet) {
-        extPoet = { id: 'ext-' + (diwanCopy.externalPoets.length + 1), name: ext.poetName, poems: [] };
-        diwanCopy.externalPoets.push(extPoet);
-      }
-      const extPoemId = extPoet.id + '-poem-' + (extPoet.poems.length + 1);
-      const extPoem = { id: extPoemId, title: ext.poemTitle, role: 'بدع', source: '' };
-
-      // أضف الأبيات لو موجودة
-      if (ext.versesRaw) {
-        const lines = ext.versesRaw.split('\n').map(l => l.trim()).filter(Boolean);
-        const verses = [];
-        for (let i = 0; i < lines.length; i += 2)
-          verses.push({ sadr: lines[i] || '', ajz: lines[i+1] || '' });
-        if (verses.length) extPoem.verses = verses;
-      }
-      extPoet.poems.push(extPoem);
-
-      // اربط الرد بالقصيدة الخارجية
-      data.poem.mujarat.respondingToId = extPoemId;
-    }
-
-    data.poem.id = poet.id + '-poem-' + (poet.poems.length + 1);
-    poet.poems.push(data.poem);
-    return data.poem;
   }
+
+  let poet;
+  if(data.poetId==='__new__'){
+    const newId = 'poet-'+(diwanCopy.poets.length+1);
+    poet = {id:newId, name:document.getElementById('new-poet-name').value.trim(),
+            wasm:document.getElementById('new-poet-wasm').value,
+            bio:document.getElementById('new-poet-bio').value.trim()||'', poems:[]};
+    diwanCopy.poets.push(poet);
+  } else {
+    poet = diwanCopy.poets.find(p=>p.id===data.poetId);
+  }
+
+  if(data.poem.pendingExternal){
+    const ext = data.poem.pendingExternal;
+    delete data.poem.pendingExternal;
+    if(!diwanCopy.externalPoets) diwanCopy.externalPoets=[];
+    let extPoet = diwanCopy.externalPoets.find(p=>p.name===ext.poetName);
+    if(!extPoet){
+      extPoet = {id:'ext-'+(diwanCopy.externalPoets.length+1), name:ext.poetName, poems:[]};
+      diwanCopy.externalPoets.push(extPoet);
+    }
+    const extPoemId = extPoet.id+'-poem-'+(extPoet.poems.length+1);
+    const extPoem = {id:extPoemId, title:ext.poemTitle, role:'بدع', source:''};
+    if(ext.versesRaw){
+      const lines = ext.versesRaw.split('\n').map(l=>l.trim()).filter(Boolean);
+      const verses=[];
+      for(let i=0;i<lines.length;i+=2) verses.push({sadr:lines[i]||'', ajz:lines[i+1]||''});
+      if(verses.length) extPoem.verses = verses;
+    }
+    extPoet.poems.push(extPoem);
+    data.poem.mujarat.respondingToId = extPoemId;
+  }
+
+  data.poem.id = poet.id+'-poem-'+(poet.poems.length+1);
+  poet.poems.push(data.poem);
+  return data.poem;
 }
 
-/* ===== نشر مباشر على GitHub ===== */
-async function publishDirect() {
-  if (!settings.token) {
-    alert('افتح إعدادات GitHub وأضف التوكن أولاً.');
-    document.getElementById('settings-panel').open = true;
-    return;
-  }
+/* ===== نشر مباشر ===== */
+async function publishDirect(){
+  if(!settings.token){ alert('افتح إعدادات GitHub وأضف التوكن أولاً.'); document.getElementById('settings-panel').open=true; return; }
   const data = buildPoemData();
-  if (!data) return;
-
+  if(!data) return;
   showPublishStatus('⏳ جاري النشر…', null);
-
-  try {
-    // احضر SHA الحالي للملف
+  try{
     const repo = settings.repo;
     const path = diwan.site?.dataPath || 'data/diwan.json';
     const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
-    const headers = { 'Authorization': `token ${settings.token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' };
+    const headers = {'Authorization':`token ${settings.token}`, 'Accept':'application/vnd.github.v3+json', 'Content-Type':'application/json'};
 
-    const getRes = await fetch(apiUrl, { headers });
-    if (!getRes.ok) throw new Error('تعذّر قراءة الملف: ' + getRes.status);
+    const getRes = await fetch(apiUrl, {headers});
+    if(!getRes.ok) throw new Error('تعذّر قراءة الملف: '+getRes.status);
     const fileInfo = await getRes.json();
     const sha = fileInfo.sha;
-
-    // احضر آخر نسخة من الملف وأضف عليها
     const latestContent = JSON.parse(decodeURIComponent(escape(atob(fileInfo.content.replace(/\s/g,'')))));
+
     const newPoem = applyToLocalDiwan(data, latestContent);
 
-    // ارفع التحديث
     const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(latestContent, null, 2))));
-    const putRes = await fetch(apiUrl, {
-      method: 'PUT', headers,
-      body: JSON.stringify({ message: `إضافة قصيدة: ${newPoem.title}`, content: encoded, sha })
-    });
+    const putRes = await fetch(apiUrl, {method:'PUT', headers,
+      body: JSON.stringify({message:`إضافة قصيدة: ${newPoem.title}`, content:encoded, sha})});
+    if(!putRes.ok){ const err = await putRes.json(); throw new Error(err.message||'فشل الرفع: '+putRes.status); }
 
-    if (!putRes.ok) {
-      const err = await putRes.json();
-      throw new Error(err.message || 'فشل الرفع: ' + putRes.status);
-    }
-
-    // حدّث النسخة المحلية
     applyToLocalDiwan(data, diwan);
-    showPublishStatus(`✅ تم النشر! القصيدة "${newPoem.title}" ستظهر على الموقع خلال دقيقة.`, true);
+    showPublishStatus(`✅ تم النشر! "${newPoem.title}" راح تظهر بالموقع خلال دقيقة.`, true);
     resetForm();
-
-  } catch (e) {
-    showPublishStatus('❌ خطأ: ' + e.message, false);
-  }
+  }catch(e){ showPublishStatus('❌ خطأ: '+e.message, false); }
 }
 
-/* ===== نسخ الكود فقط ===== */
-function generateSnippet() {
+function generateSnippet(){
   const data = buildPoemData();
-  if (!data) return;
+  if(!data) return;
   const copy = JSON.parse(JSON.stringify(diwan));
   const newPoem = applyToLocalDiwan(data, copy);
-  // حدّث الذاكرة المحلية للرقم الصح في القصيدة التالية
   applyToLocalDiwan(data, diwan);
-
   const snippet = JSON.stringify(newPoem, null, 2);
-  const poetName = data.type === 'external' ? data.poetName : diwan.poets.find(p => p.id === data.poetId)?.name;
+  const poetName = data.type==='external' ? data.poetName : diwan.poets.find(p=>p.id===data.poetId)?.name;
   document.getElementById('output').value = snippet;
   document.getElementById('output-instructions').innerHTML =
     `<b>الشاعر:</b> ${poetName} &nbsp;|&nbsp; <b>المعرّف:</b> ${newPoem.id}<br>
-     <b>اللصق:</b> افتح <code>data/diwan.json</code> ← ابحث عن هذا الشاعر ← بعد آخر قصيدة له أضف فاصلة <code>,</code> ثم الصق.`;
-  document.getElementById('output-wrap').style.display = 'block';
-  document.getElementById('output-wrap').scrollIntoView({ behavior: 'smooth' });
+     <b>اللصق:</b> افتح data/diwan.json ← ابحث عن هذا الشاعر ← بعد آخر قصيدة له أضف فاصلة , ثم الصق.`;
+  document.getElementById('output-wrap').style.display='block';
+  document.getElementById('output-wrap').scrollIntoView({behavior:'smooth'});
 }
 
-function showPublishStatus(msg, ok) {
+function showPublishStatus(msg, ok){
   const el = document.getElementById('publish-status');
   el.textContent = msg;
-  el.className = 'status-box ' + (ok === true ? 'status-ok' : ok === false ? 'status-err' : '');
-  el.style.background = ok === null ? 'rgba(201,162,39,.1)' : '';
-  el.style.border = ok === null ? '1px solid var(--gold)' : '';
-  el.style.color = ok === null ? 'var(--gold)' : '';
-  el.style.display = 'block';
-  el.scrollIntoView({ behavior: 'smooth' });
+  el.className = 'status-box ' + (ok===true?'status-ok':ok===false?'status-err':'');
+  if(ok===null){ el.style.background='rgba(201,162,39,.1)'; el.style.border='1px solid var(--gold)'; el.style.color='var(--gold)'; }
+  else { el.style.background=''; el.style.border=''; el.style.color=''; }
+  el.style.display='block';
+  el.scrollIntoView({behavior:'smooth'});
 }
-
-function copyOutput() {
-  const ta = document.getElementById('output');
-  ta.select();
+function copyOutput(){
+  const ta = document.getElementById('output'); ta.select();
   const st = document.getElementById('copy-status');
-  if (navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(ta.value).then(() => { st.textContent = 'تم النسخ ✓'; }).catch(() => { st.textContent = 'النص محدد — انسخ يدوياً.'; });
-  } else { st.textContent = 'النص محدد — انسخ يدوياً.'; }
+  if(navigator.clipboard?.writeText){
+    navigator.clipboard.writeText(ta.value).then(()=>{st.textContent='تم النسخ ✓';}).catch(()=>{st.textContent='النص محدد — انسخ يدوياً.';});
+  } else st.textContent='النص محدد — انسخ يدوياً.';
 }
-
-function resetForm() {
-  ['poem-title','poem-date','poem-source','mujarat-poet-name','mujarat-poem-title',
-   'ext-poet-name','paste-area','ext-ref-poet-name','ext-ref-poem-title','ext-ref-poem-verses']
-    .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-  document.getElementById('mujarat-poem-id').value = '';
-  document.getElementById('external-poem-fields').style.display = 'none';
-  document.getElementById('verses-container').innerHTML = '';
-  document.getElementById('parsed-preview').style.display = 'none';
-  document.getElementById('parse-count').textContent = '';
-  document.getElementById('output-wrap').style.display = 'none';
-  document.getElementById('publish-status').style.display = 'none';
-  document.getElementById('copy-status').textContent = '';
+function resetForm(){
+  ['poem-title','poem-date','poem-source','ext-poet-name','paste-area',
+   'mujarat-search','missing-poet-name','missing-poem-title','missing-poem-verses',
+   'new-poet-name','new-poet-bio']
+    .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('verses-container').innerHTML='';
+  document.getElementById('parsed-preview').style.display='none';
+  document.getElementById('parse-count').textContent='';
+  document.getElementById('mujarat-found-badge').innerHTML='';
+  document.getElementById('add-missing-fields').classList.add('hidden-section');
+  document.getElementById('output-wrap').style.display='none';
+  document.getElementById('publish-status').style.display='none';
+  document.getElementById('copy-status').textContent='';
+  document.getElementById('poet-select').value = diwan.poets[0]?.id || '__new__';
+  mujaratResolvedId='';
+  toggleNewPoetFields();
   setRole(''); setVerseMode('manual'); setAddMode('internal');
   addVerseRow(); addVerseRow();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({top:0, behavior:'smooth'});
 }
-
-function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 init();
 </script>
