@@ -2832,10 +2832,15 @@
         {
           "id": "poet-2-poem-4",
           "title": "تهيّض طويل العمر بعد شبع مندي",
-          "role": "",
+          "role": "رد",
           "meter": "",
           "date": "2008",
           "source": "موقع الشعر",
+          "mujarat": {
+            "respondingToPoet": "تراحيب بن سويلم",
+            "respondingToTitle": "زيارة بوتو",
+            "respondingToId": "poet-1-poem-30"
+          },
           "verses": [
             {
               "sadr": "تهيّض طويل العمر بعد شبع مندي",
