@@ -241,37 +241,51 @@ function showConnStatus(msg, ok){
 async function init(){
   loadSettings();
   try{
-    const url = `https://raw.githubusercontent.com/${settings.repo||'xNaiif/Diwan-alsuwailem'}/main/data/diwan.json?t=${Date.now()}`;
-    const res = await fetch(url);
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    diwan = await res.json();
+    diwan = await fetchLatestDiwan();
     afterLoad();
   }catch(e){
     document.getElementById('status').innerHTML =
       `تعذّر تحميل البيانات (${e.message}). <button onclick="retryInit()" style="background:none;border:none;color:var(--gold);cursor:pointer;text-decoration:underline">أعد المحاولة</button>`;
   }
 }
+
+/* يجيب دايم أحدث نسخة من data/diwan.json مباشرة من GitHub — يتجاوز أي تخزين مؤقت للسيرفرات الوسيطة */
+async function fetchLatestDiwan(){
+  const repo = settings.repo || 'xNaiif/Diwan-alsuwailem';
+  const path = 'data/diwan.json';
+  const headers = {'Accept':'application/vnd.github.v3.raw'};
+  if(settings.token) headers['Authorization'] = `token ${settings.token}`;
+  const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}?ref=main&t=${Date.now()}`, {headers});
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  return await res.json();
+}
 function retryInit(){ document.getElementById('status').textContent='يعيد المحاولة…'; init(); }
 
 function afterLoad(){
   document.getElementById('loader').style.display='none';
   document.getElementById('poem-form').style.display='block';
+  rebuildPoetSelectors();
+  addVerseRow(); addVerseRow();
+}
 
-  // قائمة الشعراء + خيار إضافة شاعر جديد
+/* يبني قائمة الشعراء + قائمة الوسوم المتاحة + فهرس بحث القصايد — من حالة diwan الحالية بالذاكرة.
+   يُستدعى عند التحميل الأول، وأيضاً فوراً بعد أي نشر ناجح، عشان القوائم تصير محدثة بدون ما تحتاج تعيد فتح الصفحة. */
+function rebuildPoetSelectors(){
+  const currentPoetId = document.getElementById('poet-select')?.value;
+
   const pSel = document.getElementById('poet-select');
   pSel.innerHTML = diwan.poets.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')
     + `<option value="__new__">+ إضافة شاعر جديد من آل السويلم</option>`;
   pSel.onchange = toggleNewPoetFields;
-  toggleNewPoetFields(); // حالة أولية صحيحة
+  if(currentPoetId && diwan.poets.some(p=>p.id===currentPoetId)) pSel.value = currentPoetId;
+  toggleNewPoetFields();
 
-  // وسوم متاحة للشاعر الجديد
   const usedWasms = diwan.poets.map(p=>p.wasm);
   const freeWasms = WASM_OPTIONS.filter(w=>!usedWasms.includes(w));
   document.getElementById('new-poet-wasm').innerHTML = freeWasms.length
     ? freeWasms.map(w=>`<option value="${w}">${w}</option>`).join('')
     : `<option value="">لا يوجد وسم متاح</option>`;
 
-  // فهرس بحث كل القصائد (داخلية + خارجية)
   poemLookup = {};
   const dl = document.getElementById('poem-datalist');
   let opts = '';
@@ -286,8 +300,6 @@ function afterLoad(){
     opts += `<option value="${key}"></option>`;
   }));
   dl.innerHTML = opts;
-
-  addVerseRow(); addVerseRow();
 }
 
 function toggleNewPoetFields(){
@@ -543,7 +555,8 @@ async function publishDirect(){
       body: JSON.stringify({message:`إضافة قصيدة: ${newPoem.title}`, content:encoded, sha})});
     if(!putRes.ok){ const err = await putRes.json(); throw new Error(err.message||'فشل الرفع: '+putRes.status); }
 
-    applyToLocalDiwan(data, diwan);
+    diwan = latestContent;       // نتبنى نفس النسخة اللي فعلاً انرفعت — بدون تكرار الإضافة
+    rebuildPoetSelectors();       // القوائم تتحدث فوراً بدون إعادة فتح الصفحة
     showPublishStatus(`✅ تم النشر! "${newPoem.title}" راح تظهر بالموقع خلال دقيقة.`, true);
     resetForm();
   }catch(e){ showPublishStatus('❌ خطأ: '+e.message, false); }
