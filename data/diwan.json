@@ -4910,6 +4910,7 @@
       "id": "poet-5",
       "name": "عواض بن سويلم",
       "wasm": "wasm-5",
+      "photo": "poet-5-photo.png.jpg",
       "bio": "الأخ الأصغر من ذوي سويلم",
       "poems": [
         {
