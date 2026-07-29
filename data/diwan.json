@@ -1102,8 +1102,13 @@
         {
           "id": "ext-17-poem-1",
           "title": "رد على عواض-عسى ربي يعين الي منامه",
-          "role": "بدع",
+          "role": "رد",
           "source": "الشاعر",
+          "mujarat": {
+            "respondingToPoet": "عواض بن سويلم",
+            "respondingToTitle": "عسى ربي يردك بالسلامه",
+            "respondingToId": "poet-5-poem-2"
+          },
           "verses": [
             {
               "sadr": "‎عسى ربي يعين اللي منامه",
