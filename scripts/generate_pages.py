@@ -242,9 +242,46 @@ def build_robots(sitemap_url):
     return f"User-agent: *\nAllow: /\n\nSitemap: {sitemap_url}\n"
 
 
+def validate_diwan(all_poems):
+    """يتأكد أن كل معرّف قصيدة فريد قبل البناء. لو تكرر معرّف بين قصيدتين، فإن
+    build_poem_page لهما بيكتب على نفس اسم الملف — يعني وحدة راح تطمس الثانية
+    بصمت (بدون أي خطأ ظاهر)، وهذا بالضبط اللي صار مع poet-1-poem-31 سابقاً.
+    نوقف البناء فوراً هنا بدل ما ننشر موقع فيه قصيدة ضايعة."""
+    seen = {}
+    dup_errors = []
+    for item in all_poems:
+        pid = item["poem"]["id"]
+        title = item["poem"].get("title", "?")
+        owner = item["poet"].get("name", "?")
+        if pid in seen:
+            dup_errors.append(f'  - المعرّف "{pid}" مستخدم لقصيدتين: "{seen[pid]}" و"{title}" ({owner})')
+        else:
+            seen[pid] = title
+
+    if dup_errors:
+        print("✗ توجد معرّفات قصائد مكرّرة في data/diwan.json — صحّحها قبل البناء:")
+        print("\n".join(dup_errors))
+        raise SystemExit(1)
+
+    all_ids = set(seen.keys())
+    dangling = []
+    for item in all_poems:
+        mj = item["poem"].get("mujarat") or {}
+        target = mj.get("respondingToId")
+        if target and target not in all_ids:
+            dangling.append(
+                f'  - "{item["poem"].get("title","?")}" ({item["poet"].get("name","?")}) '
+                f"يشير لمعرّف غير موجود: {target}"
+            )
+    if dangling:
+        print("⚠ تنبيه: روابط رد/مجاراة تشير لمعرّفات غير موجودة (البناء يكمل، لكن راجعها):")
+        print("\n".join(dangling))
+
+
 def main():
     data = load_data()
     all_poems = flat_poems(data)
+    validate_diwan(all_poems)
     responses_map = build_responses_map(all_poems)
 
     POEMS_DIR.mkdir(exist_ok=True)
