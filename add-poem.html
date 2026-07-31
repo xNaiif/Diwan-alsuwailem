@@ -210,6 +210,19 @@ let verseMode = 'manual';
 let poemLookup = {};        // "الشاعر — العنوان" -> poemId
 let mujaratResolvedId = ''; // آخر معرّف اتأكد منه البحث
 
+/* يحسب الرقم التالي من أعلى رقم مستخدم فعلياً بالمعرّفات — مو من طول المصفوفة.
+   السبب: لو صار حذف يدوي أو أي خلل سابق بالأرقام، طول المصفوفة ما يطابق آخر رقم
+   مستخدم فعلاً، وهذا بالضبط اللي سبب تكرار poet-1-poem-31 على قصيدتين مختلفتين. */
+function nextSeq(items, idPrefix){
+  let max = 0;
+  (items||[]).forEach(it=>{
+    if(!it.id || it.id.indexOf(idPrefix)!==0) return;
+    const n = parseInt(it.id.slice(idPrefix.length), 10);
+    if(!isNaN(n) && n > max) max = n;
+  });
+  return max + 1;
+}
+
 /* ===== إعدادات ===== */
 function loadSettings(){
   try{ settings = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || settings; }catch{}
@@ -496,10 +509,10 @@ function createPendingExternalPoet(pendingExternal, diwanCopy){
   if(!diwanCopy.externalPoets) diwanCopy.externalPoets=[];
   let extPoet = diwanCopy.externalPoets.find(p=>p.name===ext.poetName);
   if(!extPoet){
-    extPoet = {id:'ext-'+(diwanCopy.externalPoets.length+1), name:ext.poetName, poems:[]};
+    extPoet = {id:'ext-'+nextSeq(diwanCopy.externalPoets, 'ext-'), name:ext.poetName, poems:[]};
     diwanCopy.externalPoets.push(extPoet);
   }
-  const extPoemId = extPoet.id+'-poem-'+(extPoet.poems.length+1);
+  const extPoemId = extPoet.id+'-poem-'+nextSeq(extPoet.poems, extPoet.id+'-poem-');
   const extPoem = {id:extPoemId, title:ext.poemTitle, role:'بدع', source:''};
   if(ext.versesRaw){
     const lines = ext.versesRaw.split('\n').map(l=>l.trim()).filter(Boolean);
@@ -516,10 +529,10 @@ function applyToLocalDiwan(data, diwanCopy){
     let extPoet = (diwanCopy.externalPoets||[]).find(p=>p.name===data.poetName);
     if(!extPoet){
       if(!diwanCopy.externalPoets) diwanCopy.externalPoets=[];
-      extPoet = {id:'ext-'+(diwanCopy.externalPoets.length+1), name:data.poetName, poems:[]};
+      extPoet = {id:'ext-'+nextSeq(diwanCopy.externalPoets, 'ext-'), name:data.poetName, poems:[]};
       diwanCopy.externalPoets.push(extPoet);
     }
-    const poem = {id:extPoet.id+'-poem-'+(extPoet.poems.length+1), title:data.title, role:data.role,
+    const poem = {id:extPoet.id+'-poem-'+nextSeq(extPoet.poems, extPoet.id+'-poem-'), title:data.title, role:data.role,
                   date:data.date, source:data.source};
     if(data.verses.length) poem.verses = data.verses;
     if(data.mujarat) poem.mujarat = data.mujarat;
@@ -533,7 +546,7 @@ function applyToLocalDiwan(data, diwanCopy){
 
   let poet;
   if(data.poetId==='__new__'){
-    const newId = 'poet-'+(diwanCopy.poets.length+1);
+    const newId = 'poet-'+nextSeq(diwanCopy.poets, 'poet-');
     poet = {id:newId, name:document.getElementById('new-poet-name').value.trim(),
             wasm:document.getElementById('new-poet-wasm').value,
             bio:document.getElementById('new-poet-bio').value.trim()||'', poems:[]};
@@ -548,7 +561,7 @@ function applyToLocalDiwan(data, diwanCopy){
     data.poem.mujarat.respondingToId = respondingToId;
   }
 
-  data.poem.id = poet.id+'-poem-'+(poet.poems.length+1);
+  data.poem.id = poet.id+'-poem-'+nextSeq(poet.poems, poet.id+'-poem-');
   poet.poems.push(data.poem);
   return data.poem;
 }
