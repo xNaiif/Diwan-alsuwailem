@@ -99,44 +99,45 @@ summary::before{content:"⚙️ ";margin-left:4px}
       <label>الوسم (الرمز المرئي في الموقع)</label>
       <select id="new-poet-wasm"></select>
     </div>
-
-    <label>دور القصيدة</label>
-    <div class="role-pills" id="role-pills">
-      <button type="button" class="role-pill active-بدع" data-role="" onclick="setRole('')">عادي</button>
-      <button type="button" class="role-pill" data-role="بدع" onclick="setRole('بدع')">بدع — هو اللي بدأها</button>
-      <button type="button" class="role-pill" data-role="رد" onclick="setRole('رد')">ردّ — يرد على قصيدة</button>
-      <button type="button" class="role-pill" data-role="مجاراة" onclick="setRole('مجاراة')">مجاراة — يجاري قصيدة</button>
-    </div>
-
-    <div id="mujarat-ref-section" class="hidden-section">
-      <fieldset style="border-color:var(--gold)">
-        <legend>القصيدة الأصلية (البدع)</legend>
-        <label>ابحث بالاسم أو عنوان القصيدة</label>
-        <input type="text" id="mujarat-search" list="poem-datalist" placeholder="اكتب اسم الشاعر أو عنوان القصيدة…" oninput="onMujaratSearch()"/>
-        <datalist id="poem-datalist"></datalist>
-        <div id="mujarat-found-badge"></div>
-
-        <button type="button" class="toggle-add-missing" onclick="toggleAddMissing()">القصيدة مو موجودة بالديوان؟ أضفها الآن ↓</button>
-
-        <div id="add-missing-fields" class="add-missing-fields hidden-section">
-          <label>اسم الشاعر (الأصلي/الخارجي)</label>
-          <input type="text" id="missing-poet-name" placeholder="مثال: حبيب العازمي"/>
-          <label>عنوان قصيدته</label>
-          <input type="text" id="missing-poem-title" placeholder="عنوان القصيدة"/>
-          <label>أبياته (اختياري — تظهر فوق ردّك بالموقع)</label>
-          <textarea id="missing-poem-verses" class="paste-area" placeholder="الصق أبياته هنا — كل سطر = نصف بيت. اتركه فاضي لو ما عندك الأبيات" style="min-height:140px"></textarea>
-        </div>
-      </fieldset>
-    </div>
   </div>
 
   <!-- ================= قسم شاعر خارجي مستقل ================= -->
   <div id="external-section" class="hidden-section">
     <fieldset>
-      <legend>بديعة شاعر خارجي (مرجع فقط، بدون ربط برد)</legend>
+      <legend>بديعة شاعر خارجي</legend>
       <label>اسم الشاعر</label>
       <input type="text" id="ext-poet-name" placeholder="مثال: حبيب العازمي"/>
       <p class="hint">لو الشاعر موجود مسبقاً بالقائمة، يُضاف له. وإلا يُنشأ شاعر جديد</p>
+    </fieldset>
+  </div>
+
+  <!-- ================= دور القصيدة — مشترك بين شاعر السويلم والشاعر الخارجي ================= -->
+  <label>دور القصيدة</label>
+  <div class="role-pills" id="role-pills">
+    <button type="button" class="role-pill active-بدع" data-role="" onclick="setRole('')">عادي</button>
+    <button type="button" class="role-pill" data-role="بدع" onclick="setRole('بدع')">بدع — هو اللي بدأها</button>
+    <button type="button" class="role-pill" data-role="رد" onclick="setRole('رد')">ردّ — يرد على قصيدة</button>
+    <button type="button" class="role-pill" data-role="مجاراة" onclick="setRole('مجاراة')">مجاراة — يجاري قصيدة</button>
+  </div>
+
+  <div id="mujarat-ref-section" class="hidden-section">
+    <fieldset style="border-color:var(--gold)">
+      <legend>القصيدة الأصلية (البدع)</legend>
+      <label>ابحث بالاسم أو عنوان القصيدة</label>
+      <input type="text" id="mujarat-search" list="poem-datalist" placeholder="اكتب اسم الشاعر أو عنوان القصيدة…" oninput="onMujaratSearch()"/>
+      <datalist id="poem-datalist"></datalist>
+      <div id="mujarat-found-badge"></div>
+
+      <button type="button" class="toggle-add-missing" onclick="toggleAddMissing()">القصيدة مو موجودة بالديوان؟ أضفها الآن ↓</button>
+
+      <div id="add-missing-fields" class="add-missing-fields hidden-section">
+        <label>اسم الشاعر (الأصلي/الخارجي)</label>
+        <input type="text" id="missing-poet-name" placeholder="مثال: حبيب العازمي"/>
+        <label>عنوان قصيدته</label>
+        <input type="text" id="missing-poem-title" placeholder="عنوان القصيدة"/>
+        <label>أبياته (اختياري — تظهر فوق ردّك بالموقع)</label>
+        <textarea id="missing-poem-verses" class="paste-area" placeholder="الصق أبياته هنا — كل سطر = نصف بيت. اتركه فاضي لو ما عندك الأبيات" style="min-height:140px"></textarea>
+      </div>
     </fieldset>
   </div>
 
@@ -316,7 +317,7 @@ function setAddMode(mode){
   document.getElementById('internal-section').classList.toggle('hidden-section', mode!=='internal');
   document.getElementById('external-section').classList.toggle('hidden-section', mode!=='external');
   document.getElementById('ext-verses-note').style.display = mode==='external' ? '' : 'none';
-  if(mode==='external'){ currentRole='بدع'; updateRolePills(); }
+  // ملاحظة: الدور (عادي/بدع/رد/مجاراة) صار متاح بنفس الطريقة لشاعر السويلم والشاعر الخارجي، فما نغيّره هنا
 }
 
 /* ===== الدور (عادي/بدع/رد/مجاراة) ===== */
@@ -422,18 +423,49 @@ function getVerses(){
 }
 
 /* ===== بناء بيانات القصيدة ===== */
+/* يبني كائن المجاراة (رد/مجاراة) بشكل موحّد — يُستخدم لكل من شاعر السويلم والشاعر الخارجي بنفس الطريقة */
+function buildMujaratData(){
+  if(currentRole!=='رد' && currentRole!=='مجاراة') return {mujarat:null, pendingExternal:null};
+
+  const addingMissing = !document.getElementById('add-missing-fields').classList.contains('hidden-section');
+  if(addingMissing){
+    const mName = document.getElementById('missing-poet-name').value.trim();
+    const mTitle = document.getElementById('missing-poem-title').value.trim();
+    if(!mName || !mTitle){ alert('لازم تكتب اسم الشاعر وعنوان القصيدة الأصلية.'); return 'invalid'; }
+    return {
+      mujarat: {respondingToPoet:mName, respondingToTitle:mTitle, respondingToId:''},
+      pendingExternal: {poetName:mName, poemTitle:mTitle, versesRaw: document.getElementById('missing-poem-verses').value.trim()}
+    };
+  }
+  if(mujaratResolvedId){
+    const ref = findPoemById(diwan, mujaratResolvedId);
+    return {
+      mujarat: {respondingToPoet: ref?ref.poet.name:'', respondingToTitle: ref?ref.poem.title:'', respondingToId: mujaratResolvedId},
+      pendingExternal: null
+    };
+  }
+  alert('اختر القصيدة الأصلية من البحث، أو اضغط "أضفها الآن" لو مو موجودة.');
+  return 'invalid';
+}
+
 function buildPoemData(){
   const title = document.getElementById('poem-title').value.trim();
   if(!title){ alert('لازم تكتب عنوان القصيدة.'); return null; }
   const verses = getVerses();
   if(addMode==='internal' && verses.length===0){ alert('لازم تضيف بيت واحد على الأقل.'); return null; }
 
+  const m = buildMujaratData();
+  if(m==='invalid') return null;
+
   if(addMode==='external'){
     const extName = document.getElementById('ext-poet-name').value.trim();
     if(!extName){ alert('لازم تكتب اسم الشاعر الخارجي.'); return null; }
-    return {type:'external', poetName:extName, title, role:'بدع',
+    const result = {type:'external', poetName:extName, title, role:currentRole,
              date:document.getElementById('poem-date').value.trim(),
              source:document.getElementById('poem-source').value.trim(), verses};
+    if(m.mujarat) result.mujarat = m.mujarat;
+    if(m.pendingExternal) result.pendingExternal = m.pendingExternal;
+    return result;
   }
 
   const poetId = document.getElementById('poet-select').value;
@@ -445,30 +477,9 @@ function buildPoemData(){
   const poem = {title, role:currentRole, meter:'',
                 date:document.getElementById('poem-date').value.trim(),
                 source:document.getElementById('poem-source').value.trim(), verses};
+  if(m.mujarat) poem.mujarat = m.mujarat;
+  if(m.pendingExternal) poem.pendingExternal = m.pendingExternal;
 
-  if(currentRole==='رد' || currentRole==='مجاراة'){
-    const addingMissing = !document.getElementById('add-missing-fields').classList.contains('hidden-section');
-    if(addingMissing){
-      const mName = document.getElementById('missing-poet-name').value.trim();
-      const mTitle = document.getElementById('missing-poem-title').value.trim();
-      if(!mName || !mTitle){ alert('لازم تكتب اسم الشاعر وعنوان القصيدة الأصلية.'); return null; }
-      poem.pendingExternal = {
-        poetName:mName, poemTitle:mTitle,
-        versesRaw: document.getElementById('missing-poem-verses').value.trim()
-      };
-      poem.mujarat = {respondingToPoet:mName, respondingToTitle:mTitle, respondingToId:''};
-    } else if(mujaratResolvedId){
-      const ref = findPoemById(diwan, mujaratResolvedId);
-      poem.mujarat = {
-        respondingToPoet: ref ? ref.poet.name : '',
-        respondingToTitle: ref ? ref.poem.title : '',
-        respondingToId: mujaratResolvedId
-      };
-    } else {
-      alert('اختر القصيدة الأصلية من البحث، أو اضغط "أضفها الآن" لو مو موجودة.');
-      return null;
-    }
-  }
   return {type:'internal', poetId, poem};
 }
 
@@ -479,6 +490,27 @@ function findPoemById(d, id){
 }
 
 /* ===== تطبيق على نسخة الديوان ===== */
+/* ينشئ (أو يستخدم الموجود) شاعر خارجي وقصيدته من بيانات "أضفها الآن" — يُستخدم من الحالتين */
+function createPendingExternalPoet(pendingExternal, diwanCopy){
+  const ext = pendingExternal;
+  if(!diwanCopy.externalPoets) diwanCopy.externalPoets=[];
+  let extPoet = diwanCopy.externalPoets.find(p=>p.name===ext.poetName);
+  if(!extPoet){
+    extPoet = {id:'ext-'+(diwanCopy.externalPoets.length+1), name:ext.poetName, poems:[]};
+    diwanCopy.externalPoets.push(extPoet);
+  }
+  const extPoemId = extPoet.id+'-poem-'+(extPoet.poems.length+1);
+  const extPoem = {id:extPoemId, title:ext.poemTitle, role:'بدع', source:''};
+  if(ext.versesRaw){
+    const lines = ext.versesRaw.split('\n').map(l=>l.trim()).filter(Boolean);
+    const verses=[];
+    for(let i=0;i<lines.length;i+=2) verses.push({sadr:lines[i]||'', ajz:lines[i+1]||''});
+    if(verses.length) extPoem.verses = verses;
+  }
+  extPoet.poems.push(extPoem);
+  return extPoemId;
+}
+
 function applyToLocalDiwan(data, diwanCopy){
   if(data.type==='external'){
     let extPoet = (diwanCopy.externalPoets||[]).find(p=>p.name===data.poetName);
@@ -487,8 +519,14 @@ function applyToLocalDiwan(data, diwanCopy){
       extPoet = {id:'ext-'+(diwanCopy.externalPoets.length+1), name:data.poetName, poems:[]};
       diwanCopy.externalPoets.push(extPoet);
     }
-    const poem = {id:extPoet.id+'-poem-'+(extPoet.poems.length+1), title:data.title, role:data.role, source:data.source};
+    const poem = {id:extPoet.id+'-poem-'+(extPoet.poems.length+1), title:data.title, role:data.role,
+                  date:data.date, source:data.source};
     if(data.verses.length) poem.verses = data.verses;
+    if(data.mujarat) poem.mujarat = data.mujarat;
+    if(data.pendingExternal){
+      const respondingToId = createPendingExternalPoet(data.pendingExternal, diwanCopy);
+      poem.mujarat.respondingToId = respondingToId;
+    }
     extPoet.poems.push(poem);
     return poem;
   }
@@ -505,24 +543,9 @@ function applyToLocalDiwan(data, diwanCopy){
   }
 
   if(data.poem.pendingExternal){
-    const ext = data.poem.pendingExternal;
+    const respondingToId = createPendingExternalPoet(data.poem.pendingExternal, diwanCopy);
     delete data.poem.pendingExternal;
-    if(!diwanCopy.externalPoets) diwanCopy.externalPoets=[];
-    let extPoet = diwanCopy.externalPoets.find(p=>p.name===ext.poetName);
-    if(!extPoet){
-      extPoet = {id:'ext-'+(diwanCopy.externalPoets.length+1), name:ext.poetName, poems:[]};
-      diwanCopy.externalPoets.push(extPoet);
-    }
-    const extPoemId = extPoet.id+'-poem-'+(extPoet.poems.length+1);
-    const extPoem = {id:extPoemId, title:ext.poemTitle, role:'بدع', source:''};
-    if(ext.versesRaw){
-      const lines = ext.versesRaw.split('\n').map(l=>l.trim()).filter(Boolean);
-      const verses=[];
-      for(let i=0;i<lines.length;i+=2) verses.push({sadr:lines[i]||'', ajz:lines[i+1]||''});
-      if(verses.length) extPoem.verses = verses;
-    }
-    extPoet.poems.push(extPoem);
-    data.poem.mujarat.respondingToId = extPoemId;
+    data.poem.mujarat.respondingToId = respondingToId;
   }
 
   data.poem.id = poet.id+'-poem-'+(poet.poems.length+1);
