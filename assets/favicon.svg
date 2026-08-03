@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="15" fill="#15110d"/>
+  <rect x="1.2" y="1.2" width="61.6" height="61.6" rx="14" fill="none" stroke="#c9a227" stroke-opacity="0.4" stroke-width="1.2"/>
+  <text x="32" y="40" font-family="FreeSerif, serif" font-size="34" font-weight="700"
+        text-anchor="middle" fill="#f0e6d2">س</text>
+  <path d="M 16 47 Q 32 53 48 47" stroke="#d9803f" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+</svg>
