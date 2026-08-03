@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 
 SITE_URL = "https://diwan-alswilem.com"
+DEFAULT_OG_IMAGE = f"{SITE_URL}/assets/og-image.jpg"
 ROOT = Path(__file__).resolve().parent.parent  # جذر المستودع
 DATA_PATH = ROOT / "data" / "diwan.json"
 POEMS_DIR = ROOT / "poems"
@@ -72,8 +73,9 @@ def render_verses(verses):
     return "\n".join(rows)
 
 
-def page_shell(title, description, canonical_url, body_html, json_ld=""):
+def page_shell(title, description, canonical_url, body_html, json_ld="", og_image=None):
     """القالب الأساسي المشترك لأي صفحة ثابتة، يعيد استخدام نفس css/style.css."""
+    image = og_image or DEFAULT_OG_IMAGE
     return f"""<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -83,12 +85,25 @@ def page_shell(title, description, canonical_url, body_html, json_ld=""):
 <meta name="description" content="{esc(description)}" />
 <link rel="canonical" href="{esc(canonical_url)}" />
 
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png" />
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+<meta name="theme-color" content="#15110d" />
+
 <meta property="og:type" content="article" />
+<meta property="og:site_name" content="ديوان آل السويلم" />
 <meta property="og:title" content="{esc(title)}" />
 <meta property="og:description" content="{esc(description)}" />
 <meta property="og:url" content="{esc(canonical_url)}" />
+<meta property="og:image" content="{esc(image)}" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
 <meta property="og:locale" content="ar_SA" />
-<meta name="twitter:card" content="summary" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="{esc(title)}" />
+<meta name="twitter:description" content="{esc(description)}" />
+<meta name="twitter:image" content="{esc(image)}" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
