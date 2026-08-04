@@ -117,7 +117,7 @@ def page_shell(title, description, canonical_url, body_html, json_ld="", og_imag
   <div class="hero-inner">
     <a href="/" style="text-decoration:none">
       <p class="hero-eyebrow">ديوان أسرة</p>
-      <h1 class="hero-title" style="font-size:clamp(1.8rem,6vw,2.6rem)">آل السويلم</h1>
+      <p class="hero-title" style="font-size:clamp(1.8rem,6vw,2.6rem);margin:0">آل السويلم</p>
     </a>
   </div>
 </header>
@@ -199,19 +199,19 @@ def build_poem_page(item, all_poems, responses_map):
     <div class="chain-poet-label">{esc(poet["name"])}
       {f'<span class="poem-meta">· {esc(poem.get("date"))}</span>' if poem.get("date") else ""}
     </div>
-    <h2 class="chain-title">{esc(poem["title"])}</h2>
+    <h1 class="chain-title">{esc(poem["title"])}</h1>
     <div class="verses chain-verses">{resp_verses}</div>
   </div>
 </div>
 {responses_html}
 <p style="text-align:center;margin-top:28px">
-  <a href="/poet/{esc(poet['id'])}.html" style="color:var(--gold)">قصائد أخرى لـ{esc(poet['name'])} ←</a>
+  <a href="/poets/{esc(poet['id'])}.html" style="color:var(--gold)">قصائد أخرى لـ{esc(poet['name'])} ←</a>
 </p>"""
     else:
         verses_html = render_verses(poem.get("verses"))
         body = f"""
 <div class="poem-header">
-  <h2>{esc(poem["title"])}</h2>
+  <h1>{esc(poem["title"])}</h1>
   <div class="poem-meta">{esc(poet["name"])}{f' · {esc(poem.get("date"))}' if poem.get("date") else ""}{f' · {esc(poem.get("meter"))}' if poem.get("meter") else ""}</div>
 </div>
 {f'<div class="verses">{verses_html}</div>' if verses_html else '<p style="text-align:center;color:var(--text-faint)">لم تُحفظ أبيات هذه القصيدة في الديوان بعد</p>'}
@@ -234,13 +234,15 @@ def build_poet_page(poet):
         first_verse = poem.get("verses", [{}])[0].get("sadr", "") if poem.get("verses") else ""
         cards.append(f"""
 <a href="/poems/{esc(poem['id'])}.html" class="poem-card" style="display:block;text-decoration:none;margin-bottom:14px">
-  <h3>{esc(poem["title"])}</h3>
-  <p>{esc(first_verse)}</p>
+  <div data-nosnippet>
+    <h3>{esc(poem["title"])}</h3>
+    <p>{esc(first_verse)}</p>
+  </div>
 </a>""")
 
     body = f"""
 <div class="poet-bio-banner">
-  <div><h2>{esc(poet["name"])}</h2><p>{esc(poet.get("bio", ""))}</p></div>
+  <div><h1>{esc(poet["name"])}</h1><p>{esc(poet.get("bio", ""))}</p></div>
 </div>
 <div class="poems-grid">{"".join(cards)}</div>
 <p style="text-align:center;margin-top:20px"><a href="/" style="color:var(--gold)">تصفّح كل شعراء الديوان ←</a></p>"""
