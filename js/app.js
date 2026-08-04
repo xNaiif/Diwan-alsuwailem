@@ -186,8 +186,10 @@ function renderGridView() {
         ${roleBadge(poem.role)}
         ${hasResponses ? `<span class="role-badge role-responded">تمت مجاراتها</span>` : ""}
       </div>
-      <h3>${esc(poem.title)}</h3>
-      <p>${poem.verses?.[0] ? esc(poem.verses[0].sadr) : ""}</p>
+      <div data-nosnippet>
+        <h3>${esc(poem.title)}</h3>
+        <p>${poem.verses?.[0] ? esc(poem.verses[0].sadr) : ""}</p>
+      </div>
     </article>`;
   }).join("");
 
