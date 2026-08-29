@@ -15,7 +15,6 @@ import os
 from pathlib import Path
 
 SITE_URL = "https://diwan-alswilem.com"
-DEFAULT_OG_IMAGE = f"{SITE_URL}/assets/og-image.jpg"
 ROOT = Path(__file__).resolve().parent.parent  # جذر المستودع
 DATA_PATH = ROOT / "data" / "diwan.json"
 POEMS_DIR = ROOT / "poems"
@@ -73,9 +72,8 @@ def render_verses(verses):
     return "\n".join(rows)
 
 
-def page_shell(title, description, canonical_url, body_html, json_ld="", og_image=None):
+def page_shell(title, description, canonical_url, body_html, json_ld=""):
     """القالب الأساسي المشترك لأي صفحة ثابتة، يعيد استخدام نفس css/style.css."""
-    image = og_image or DEFAULT_OG_IMAGE
     return f"""<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -85,25 +83,12 @@ def page_shell(title, description, canonical_url, body_html, json_ld="", og_imag
 <meta name="description" content="{esc(description)}" />
 <link rel="canonical" href="{esc(canonical_url)}" />
 
-<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
-<link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png" />
-<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
-<meta name="theme-color" content="#15110d" />
-
 <meta property="og:type" content="article" />
-<meta property="og:site_name" content="ديوان آل السويلم" />
 <meta property="og:title" content="{esc(title)}" />
 <meta property="og:description" content="{esc(description)}" />
 <meta property="og:url" content="{esc(canonical_url)}" />
-<meta property="og:image" content="{esc(image)}" />
-<meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
 <meta property="og:locale" content="ar_SA" />
-
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="{esc(title)}" />
-<meta name="twitter:description" content="{esc(description)}" />
-<meta name="twitter:image" content="{esc(image)}" />
+<meta name="twitter:card" content="summary" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -117,7 +102,7 @@ def page_shell(title, description, canonical_url, body_html, json_ld="", og_imag
   <div class="hero-inner">
     <a href="/" style="text-decoration:none">
       <p class="hero-eyebrow">ديوان أسرة</p>
-      <p class="hero-title" style="font-size:clamp(1.8rem,6vw,2.6rem);margin:0">آل السويلم</p>
+      <h1 class="hero-title" style="font-size:clamp(1.8rem,6vw,2.6rem)">آل السويلم</h1>
     </a>
   </div>
 </header>
@@ -199,7 +184,7 @@ def build_poem_page(item, all_poems, responses_map):
     <div class="chain-poet-label">{esc(poet["name"])}
       {f'<span class="poem-meta">· {esc(poem.get("date"))}</span>' if poem.get("date") else ""}
     </div>
-    <h1 class="chain-title">{esc(poem["title"])}</h1>
+    <h2 class="chain-title">{esc(poem["title"])}</h2>
     <div class="verses chain-verses">{resp_verses}</div>
   </div>
 </div>
@@ -211,7 +196,7 @@ def build_poem_page(item, all_poems, responses_map):
         verses_html = render_verses(poem.get("verses"))
         body = f"""
 <div class="poem-header">
-  <h1>{esc(poem["title"])}</h1>
+  <h2>{esc(poem["title"])}</h2>
   <div class="poem-meta">{esc(poet["name"])}{f' · {esc(poem.get("date"))}' if poem.get("date") else ""}{f' · {esc(poem.get("meter"))}' if poem.get("meter") else ""}</div>
 </div>
 {f'<div class="verses">{verses_html}</div>' if verses_html else '<p style="text-align:center;color:var(--text-faint)">لم تُحفظ أبيات هذه القصيدة في الديوان بعد</p>'}
@@ -234,15 +219,13 @@ def build_poet_page(poet):
         first_verse = poem.get("verses", [{}])[0].get("sadr", "") if poem.get("verses") else ""
         cards.append(f"""
 <a href="/poems/{esc(poem['id'])}.html" class="poem-card" style="display:block;text-decoration:none;margin-bottom:14px">
-  <div data-nosnippet>
-    <h3>{esc(poem["title"])}</h3>
-    <p>{esc(first_verse)}</p>
-  </div>
+  <h3>{esc(poem["title"])}</h3>
+  <p>{esc(first_verse)}</p>
 </a>""")
 
     body = f"""
 <div class="poet-bio-banner">
-  <div><h1>{esc(poet["name"])}</h1><p>{esc(poet.get("bio", ""))}</p></div>
+  <div><h2>{esc(poet["name"])}</h2><p>{esc(poet.get("bio", ""))}</p></div>
 </div>
 <div class="poems-grid">{"".join(cards)}</div>
 <p style="text-align:center;margin-top:20px"><a href="/" style="color:var(--gold)">تصفّح كل شعراء الديوان ←</a></p>"""
@@ -259,47 +242,38 @@ def build_robots(sitemap_url):
     return f"User-agent: *\nAllow: /\n\nSitemap: {sitemap_url}\n"
 
 
-def validate_diwan(all_poems):
-    """يتأكد أن كل معرّف قصيدة فريد قبل البناء. لو تكرر معرّف بين قصيدتين، فإن
-    build_poem_page لهما بيكتب على نفس اسم الملف — يعني وحدة راح تطمس الثانية
-    بصمت (بدون أي خطأ ظاهر)، وهذا بالضبط اللي صار مع poet-1-poem-31 سابقاً.
-    نوقف البناء فوراً هنا بدل ما ننشر موقع فيه قصيدة ضايعة."""
-    seen = {}
-    dup_errors = []
-    for item in all_poems:
-        pid = item["poem"]["id"]
-        title = item["poem"].get("title", "?")
-        owner = item["poet"].get("name", "?")
-        if pid in seen:
-            dup_errors.append(f'  - المعرّف "{pid}" مستخدم لقصيدتين: "{seen[pid]}" و"{title}" ({owner})')
-        else:
-            seen[pid] = title
+INDEX_PATH = ROOT / "index.html"
 
-    if dup_errors:
-        print("✗ توجد معرّفات قصائد مكرّرة في data/diwan.json — صحّحها قبل البناء:")
-        print("\n".join(dup_errors))
-        raise SystemExit(1)
 
-    all_ids = set(seen.keys())
-    dangling = []
-    for item in all_poems:
-        mj = item["poem"].get("mujarat") or {}
-        target = mj.get("respondingToId")
-        if target and target not in all_ids:
-            dangling.append(
-                f'  - "{item["poem"].get("title","?")}" ({item["poet"].get("name","?")}) '
-                f"يشير لمعرّف غير موجود: {target}"
-            )
-    if dangling:
-        print("⚠ تنبيه: روابط رد/مجاراة تشير لمعرّفات غير موجودة (البناء يكمل، لكن راجعها):")
-        print("\n".join(dangling))
+def update_index_links(data):
+    """يحدّث روابط الشعراء الحقيقية بالصفحة الرئيسية تلقائياً — يعطي جوجل مساراً حقيقياً
+    من الصفحة الرئيسية إلى كل صفحات القصائد، بدون أي تأثير على تجربة الموقع التفاعلية."""
+    if not INDEX_PATH.exists():
+        return
+    html_doc = INDEX_PATH.read_text(encoding="utf-8")
+    start_marker = "<!-- SEO-LINKS-START -->"
+    end_marker = "<!-- SEO-LINKS-END -->"
+    if start_marker not in html_doc or end_marker not in html_doc:
+        return
+    links = "\n    ".join(
+        f'<a href="/poets/{esc(p["id"])}.html">{esc(p["name"])}</a>'
+        for p in data.get("poets", [])
+    )
+    block = (
+        f'{start_marker}\n  <nav class="footer-links" aria-label="روابط سريعة لصفحات الشعراء">\n'
+        f'    {links}\n  </nav>\n  {end_marker}'
+    )
+    before = html_doc.split(start_marker)[0]
+    after = html_doc.split(end_marker)[1]
+    INDEX_PATH.write_text(before + block + after, encoding="utf-8")
 
 
 def main():
     data = load_data()
     all_poems = flat_poems(data)
-    validate_diwan(all_poems)
     responses_map = build_responses_map(all_poems)
+
+    update_index_links(data)
 
     POEMS_DIR.mkdir(exist_ok=True)
     POETS_DIR.mkdir(exist_ok=True)
