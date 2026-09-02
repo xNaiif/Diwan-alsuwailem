@@ -79,6 +79,20 @@ async function init() {
   bindGlobalEvents();
   handleRoute();
   window.addEventListener("hashchange", handleRoute);
+  initBackToTop();
+}
+
+/* زر عائم يرجّع لأعلى الصفحة — يظهر بعد ما تنزل بالتمرير بمسافة معينة */
+function initBackToTop() {
+  const btn = document.createElement("button");
+  btn.id = "back-to-top";
+  btn.setAttribute("aria-label", "الرجوع لأعلى الصفحة");
+  btn.innerHTML = "↑";
+  btn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+  document.body.appendChild(btn);
+  window.addEventListener("scroll", () => {
+    btn.classList.toggle("visible", window.scrollY > 420);
+  });
 }
 
 function getAllPoemsFlat() {
@@ -186,10 +200,8 @@ function renderGridView() {
         ${roleBadge(poem.role)}
         ${hasResponses ? `<span class="role-badge role-responded">تمت مجاراتها</span>` : ""}
       </div>
-      <div data-nosnippet>
-        <h3>${esc(poem.title)}</h3>
-        <p>${poem.verses?.[0] ? esc(poem.verses[0].sadr) : ""}</p>
-      </div>
+      <h3>${esc(poem.title)}</h3>
+      <p>${poem.verses?.[0] ? esc(poem.verses[0].sadr) : ""}</p>
     </article>`;
   }).join("");
 
@@ -257,7 +269,7 @@ function buildVerses(verses) {
 }
 
 function buildChainView(backBtn, origFound, resp, responsesSection) {
-  const { poet: origPoet, poem: origPoem } = origFound;
+  const { poet: origPoet, poem: origPoem, isExternal: origIsExternal } = origFound;
   const { poet: respPoet, poem: respPoem } = resp;
   const origVerses = buildVerses(origPoem.verses);
   const respVerses = buildVerses(respPoem.verses);
@@ -265,15 +277,16 @@ function buildChainView(backBtn, origFound, resp, responsesSection) {
   return `
     ${backBtn}
     <div class="poem-chain">
-      <div class="chain-poem">
+      <div class="chain-poem chain-poem-clickable" data-poem="${esc(origPoem.id)}" tabindex="0" role="button" aria-label="افتح قصيدة ${esc(origPoem.title)} كاملة">
         <div class="chain-poet-label">
-          ${roleBadge("بدع")} ${esc(origPoet.name)}
+          ${roleBadge(origPoem.role || "بدع")} ${esc(origPoet.name)}
           ${origPoem.date ? `<span class="poem-meta">· ${esc(origPoem.date)}</span>` : ""}
         </div>
         <h3 class="chain-title">${esc(origPoem.title)}</h3>
         ${origVerses
           ? `<div class="verses chain-verses">${origVerses}</div>`
           : `<p class="chain-no-verses">لم تُحفظ أبيات هذه القصيدة في الديوان</p>`}
+        <span class="chain-open-hint">افتح القصيدة كاملة ←</span>
       </div>
 
       <div class="chain-divider">
