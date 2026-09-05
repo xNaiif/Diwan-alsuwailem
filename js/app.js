@@ -227,15 +227,20 @@ function renderGridView() {
     });
   }
 
+  const recentSection = renderRecentSection();
   const bioBanner = renderBioBanner();
   if (items.length === 0) {
-    el.poemsGrid.innerHTML = bioBanner + `<div class="empty-state">لا توجد قصائد مطابقة لبحثك حتى الآن.</div>`;
+    el.poemsGrid.innerHTML = recentSection + bioBanner + `<div class="empty-state">لا توجد قصائد مطابقة لبحثك حتى الآن.</div>`;
     return;
   }
 
-  const cards = items.map(({ poet, poem }) => {
-    const hasResponses = !!state.responsesMap[poem.id];
-    return `<article class="poem-card" data-poem="${esc(poem.id)}" tabindex="0" role="button">
+  const cards = items.map(({ poet, poem }) => buildPoemCard(poet, poem)).join("");
+  el.poemsGrid.innerHTML = recentSection + bioBanner + cards;
+}
+
+function buildPoemCard(poet, poem) {
+  const hasResponses = !!state.responsesMap[poem.id];
+  return `<article class="poem-card" data-poem="${esc(poem.id)}" tabindex="0" role="button">
       <div class="poem-card-tag">
         ${poetMark(poet, "width:14px;height:14px;")} ${esc(poet.name)}
         ${roleBadge(poem.role)}
@@ -244,9 +249,19 @@ function renderGridView() {
       <h3>${esc(poem.title)}</h3>
       <p>${poem.verses?.[0] ? esc(poem.verses[0].sadr) : ""}</p>
     </article>`;
-  }).join("");
+}
 
-  el.poemsGrid.innerHTML = bioBanner + cards;
+/* قصائد أُضيفت حديثاً — تظهر بس بعرض "الكل" بدون بحث، وبس لو فيه قصائد عندها تاريخ إضافة حقيقي.
+   قصائد قديمة بدون هذا التاريخ ما تدخل بالحساب، فالقسم يختفي تلقائياً لو ما فيه شي حديث كفاية. */
+function renderRecentSection() {
+  if (state.activePoet !== "all" || state.query) return "";
+  const dated = getAllPoemsFlat()
+    .filter(({ isExternal, poem }) => !isExternal && poem.addedAt)
+    .sort((a, b) => (b.poem.addedAt || "").localeCompare(a.poem.addedAt || ""))
+    .slice(0, 10);
+  if (dated.length === 0) return "";
+  const cards = dated.map(({ poet, poem }) => buildPoemCard(poet, poem)).join("");
+  return `<h2 class="recent-heading">أضيف حديثاً</h2>${cards}<div class="recent-divider"></div>`;
 }
 
 function renderBioBanner() {
