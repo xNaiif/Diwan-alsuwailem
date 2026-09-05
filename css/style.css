@@ -238,3 +238,41 @@ main{position:relative;z-index:1;max-width:var(--container);margin:0 auto;paddin
   font-size:1.25rem;color:var(--gold);margin:0 0 2px;
 }
 .recent-divider{grid-column:1/-1;height:1px;background:var(--border);margin:8px 0 4px}
+
+/* ---------- مسار التنقّل (Breadcrumbs) ---------- */
+.breadcrumbs{max-width:var(--container);margin:0 auto 18px;padding:0 4px;font-size:.82rem;color:var(--text-faint);display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.breadcrumbs a{color:var(--text-faint);text-decoration:none}
+.breadcrumbs a:hover{color:var(--gold)}
+.breadcrumbs .crumb-sep{opacity:.5}
+.breadcrumbs [aria-current="page"]{color:var(--text-muted)}
+
+/* ---------- عناوين فرعية داخل الصفحات الثابتة ---------- */
+.section-label{max-width:680px;margin:26px auto 10px;font-size:.85rem;color:var(--gold);font-weight:600;font-family:var(--font-body)}
+
+/* ---------- معلومات القصيدة (شاعر/تاريخ/بحر/مصدر) ---------- */
+.poem-info{display:flex;flex-wrap:wrap;gap:6px 20px;max-width:680px;margin:10px auto 0;padding:0;font-size:.85rem;color:var(--text-faint)}
+.poem-info > div{display:flex;gap:5px}
+.poem-info dt{font-weight:600;color:var(--text-muted);margin:0}
+.poem-info dd{margin:0}
+
+/* ---------- قصائد أخرى لنفس الشاعر ---------- */
+.related-poems{max-width:680px;margin:22px auto 0}
+.related-poems ul{list-style:none;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:6px}
+.related-poems a{color:var(--text);text-decoration:none;font-size:.92rem}
+.related-poems a:hover{color:var(--gold)}
+
+/* ---------- صفحة فهرس الشعراء ---------- */
+.poets-index-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-top:20px}
+.poets-index-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;display:flex;gap:14px;align-items:flex-start;text-decoration:none;color:inherit;transition:border-color .18s ease,transform .18s ease}
+.poets-index-card:hover{border-color:var(--ember);transform:translateY(-2px)}
+.poets-index-card img{width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.poets-index-card h2{margin:0 0 4px;font-family:var(--font-display);font-size:1.15rem;color:var(--text)}
+.poets-index-card p{margin:0;color:var(--text-muted);font-size:.85rem;line-height:1.5}
+
+/* ---------- صفحة 404 ---------- */
+.not-found{max-width:520px;margin:0 auto;text-align:center;padding:20px 0}
+.not-found .code{font-family:var(--font-display);font-size:clamp(3.2rem,10vw,5rem);color:var(--gold);margin:0}
+.not-found p{color:var(--text-muted);margin:10px 0 24px}
+.not-found .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.not-found .actions a{background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:9px 18px;color:var(--text);text-decoration:none;font-size:.9rem;transition:border-color .18s ease}
+.not-found .actions a:hover{border-color:var(--ember);color:var(--gold)}

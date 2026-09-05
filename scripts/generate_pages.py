@@ -4,6 +4,8 @@
 مولّد صفحات ثابتة لديوان آل السويلم — يقرأ data/diwan.json ويبني:
   - صفحة HTML كاملة لكل قصيدة تحت /poems/
   - صفحة HTML لكل شاعر تحت /poets/
+  - صفحة فهرس الشعراء /poets/
+  - صفحة 404 مخصّصة
   - sitemap.xml
   - robots.txt
 يشتغل تلقائياً عبر GitHub Actions عند أي دفعة (push) — لا يحتاج أي شي يدوي.
@@ -11,14 +13,17 @@
 
 import json
 import html
-import os
+import datetime
 from pathlib import Path
 
 SITE_URL = "https://diwan-alswilem.com"
+SITE_NAME = "ديوان آل السويلم"
 ROOT = Path(__file__).resolve().parent.parent  # جذر المستودع
 DATA_PATH = ROOT / "data" / "diwan.json"
 POEMS_DIR = ROOT / "poems"
 POETS_DIR = ROOT / "poets"
+
+ROLE_LABELS = {"بدع": "بدع (أصلية)", "رد": "ردّ", "مجاراة": "مجاراة"}
 
 
 def esc(s):
@@ -80,7 +85,70 @@ SITE_CSP = (
 )
 
 
-def page_shell(title, description, canonical_url, body_html, json_ld=""):
+def organization_dict():
+    return {"@type": "Organization", "name": SITE_NAME, "url": f"{SITE_URL}/"}
+
+
+# ---------------------------------------------------------------------------
+# مسار التنقّل (Breadcrumbs) — مصدر واحد يُستخدم لبناء الشريط المرئي وJSON-LD معاً
+# ---------------------------------------------------------------------------
+
+def poem_breadcrumb_items(poet, poem, is_external, canonical_url):
+    items = [{"name": SITE_NAME, "url": f"{SITE_URL}/"}]
+    if is_external:
+        items.append({"name": "شعراء تجاوبوا مع الديوان", "url": f"{SITE_URL}/respondents.html"})
+    else:
+        items.append({"name": "الشعراء", "url": f"{SITE_URL}/poets/"})
+        items.append({"name": poet.get("name"), "url": f"{SITE_URL}/poets/{poet['id']}.html"})
+    items.append({"name": poem.get("title"), "url": canonical_url})
+    return items
+
+
+def poet_breadcrumb_items(poet, canonical_url):
+    return [
+        {"name": SITE_NAME, "url": f"{SITE_URL}/"},
+        {"name": "الشعراء", "url": f"{SITE_URL}/poets/"},
+        {"name": poet.get("name"), "url": canonical_url},
+    ]
+
+
+def simple_breadcrumb_items(label, canonical_url):
+    return [
+        {"name": SITE_NAME, "url": f"{SITE_URL}/"},
+        {"name": label, "url": canonical_url},
+    ]
+
+
+def breadcrumb_html(items):
+    parts = []
+    last_index = len(items) - 1
+    for i, it in enumerate(items):
+        if i > 0:
+            parts.append('<span class="crumb-sep" aria-hidden="true">/</span>')
+        if i == last_index:
+            parts.append(f'<span aria-current="page">{esc(it["name"])}</span>')
+        else:
+            parts.append(f'<a href="{esc(it["url"])}">{esc(it["name"])}</a>')
+    return f'<nav class="breadcrumbs" aria-label="مسار التنقل">{"".join(parts)}</nav>'
+
+
+def breadcrumb_json_ld(items):
+    elements = [
+        {"@type": "ListItem", "position": i + 1, "name": it["name"], "item": it["url"]}
+        for i, it in enumerate(items)
+    ]
+    return {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": elements}
+
+
+def ld_scripts(*blocks):
+    return "\n".join(f'<script type="application/ld+json">{json.dumps(b, ensure_ascii=False)}</script>' for b in blocks)
+
+
+# ---------------------------------------------------------------------------
+# القالب الأساسي
+# ---------------------------------------------------------------------------
+
+def page_shell(title, description, canonical_url, body_html, json_ld="", robots="index, follow"):
     """القالب الأساسي المشترك لأي صفحة ثابتة، يعيد استخدام نفس css/style.css."""
     return f"""<!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -89,6 +157,7 @@ def page_shell(title, description, canonical_url, body_html, json_ld=""):
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>{esc(title)}</title>
 <meta name="description" content="{esc(description)}" />
+<meta name="robots" content="{esc(robots)}" />
 <link rel="canonical" href="{esc(canonical_url)}" />
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
 <link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png" />
@@ -130,7 +199,7 @@ def page_shell(title, description, canonical_url, body_html, json_ld=""):
 {body_html}
 </main>
 <footer class="site-footer">
-  <p>ديوان آل السويلم — © {esc(str(__import__("datetime").date.today().year))}
+  <p>{SITE_NAME} — © {esc(str(datetime.date.today().year))}
     <span class="footer-note">هذه صفحة ثابتة لتسهيل الوصول والفهرسة — <a href="/" style="color:var(--gold)">تصفّح الديوان كامل من هنا</a></span>
   </p>
 </footer>
@@ -147,6 +216,7 @@ def poem_json_ld(poet, poem, canonical_url, is_external):
         "@type": "CreativeWork",
         "name": poem.get("title"),
         "author": {"@type": "Person", "name": poet.get("name")},
+        "publisher": organization_dict(),
         "inLanguage": "ar",
         "genre": "شعر نبطي",
         "url": canonical_url,
@@ -156,25 +226,8 @@ def poem_json_ld(poet, poem, canonical_url, is_external):
     if verses_text:
         creative_work["text"] = verses_text[:2000]
 
-    breadcrumb = {
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-            {"@type": "ListItem", "position": 1, "name": "ديوان آل السويلم", "item": f"{SITE_URL}/"},
-        ],
-    }
-    if not is_external:
-        breadcrumb["itemListElement"].append(
-            {"@type": "ListItem", "position": 2, "name": poet.get("name"), "item": f"{SITE_URL}/poets/{poet['id']}.html"}
-        )
-    breadcrumb["itemListElement"].append(
-        {"@type": "ListItem", "position": len(breadcrumb["itemListElement"]) + 1, "name": poem.get("title"), "item": canonical_url}
-    )
-
-    return (
-        f'<script type="application/ld+json">{json.dumps(creative_work, ensure_ascii=False)}</script>\n'
-        f'<script type="application/ld+json">{json.dumps(breadcrumb, ensure_ascii=False)}</script>'
-    )
+    breadcrumb = breadcrumb_json_ld(poem_breadcrumb_items(poet, poem, is_external, canonical_url))
+    return ld_scripts(creative_work, breadcrumb)
 
 
 def poet_json_ld(poet, canonical_url):
@@ -187,14 +240,52 @@ def poet_json_ld(poet, canonical_url):
         "image": f"{SITE_URL}{poet['photo']}" if poet.get("photo") else None,
     }
     data = {k: v for k, v in data.items() if v is not None}
-    return f'<script type="application/ld+json">{json.dumps(data, ensure_ascii=False)}</script>'
+    breadcrumb = breadcrumb_json_ld(poet_breadcrumb_items(poet, canonical_url))
+    return ld_scripts(data, breadcrumb)
+
+
+def poem_info_html(poet, poem):
+    """كتلة دلالية (dl) بمعلومات القصيدة — تعرض فقط الحقول المتوفرة فعلياً، بدون أي اختلاق بيانات."""
+    fields = [
+        ("الشاعر", poet.get("name")),
+        ("التاريخ", poem.get("date")),
+        ("البحر/الوزن", poem.get("meter")),
+        ("النوع", ROLE_LABELS.get(poem.get("role"))),
+        ("المصدر", poem.get("source")),
+    ]
+    rows = "".join(
+        f'<div><dt>{esc(label)}:</dt><dd>{esc(value)}</dd></div>'
+        for label, value in fields if value
+    )
+    return f'<dl class="poem-info">{rows}</dl>' if rows else ""
+
+
+def related_poems_html(poet, poem, is_external):
+    others = [p for p in poet.get("poems", []) if p.get("id") != poem.get("id")]
+    if not others:
+        return ""
+    items = "".join(
+        f'<li><a href="/poems/{esc(p["id"])}.html">{esc(p["title"])}</a></li>' for p in others[:3]
+    )
+    poet_link = (
+        "" if is_external else
+        f'<p style="margin-top:10px"><a href="/poets/{esc(poet["id"])}.html" style="color:var(--gold)">كل قصائد {esc(poet["name"])} ←</a></p>'
+    )
+    return (
+        f'<div class="related-poems"><span class="section-label" style="margin:0">'
+        f'قصائد أخرى لـ{esc(poet["name"])}</span><ul>{items}</ul>{poet_link}</div>'
+    )
 
 
 def build_poem_page(item, all_poems, responses_map):
     poet, poem, is_external = item["poet"], item["poem"], item["isExternal"]
     canonical = f"{SITE_URL}/poems/{poem['id']}.html"
     description = poem.get("verses", [{}])[0].get("sadr", poem["title"]) if poem.get("verses") else poem["title"]
-    title = f'{poem["title"]} — {poet["name"]} | ديوان آل السويلم'
+    title = f'{poem["title"]} — {poet["name"]} | {SITE_NAME}'
+
+    breadcrumb_nav = breadcrumb_html(poem_breadcrumb_items(poet, poem, is_external, canonical))
+    info_html = poem_info_html(poet, poem)
+    related_html = related_poems_html(poet, poem, is_external)
 
     is_chain = poem.get("role") in ("رد", "مجاراة") and (poem.get("mujarat") or {}).get("respondingToId")
     original = find_poem(all_poems, poem["mujarat"]["respondingToId"]) if is_chain else None
@@ -223,6 +314,7 @@ def build_poem_page(item, all_poems, responses_map):
         resp_verses = render_verses(poem.get("verses"))
         role_word = "ردّ" if poem.get("role") == "رد" else "مجاراة"
         body = f"""
+{breadcrumb_nav}
 <div class="poem-chain">
   <div class="chain-poem">
     <div class="chain-poet-label">{esc(orig_poet["name"])}
@@ -240,22 +332,21 @@ def build_poem_page(item, all_poems, responses_map):
     <div class="verses chain-verses">{resp_verses}</div>
   </div>
 </div>
+{info_html}
 {responses_html}
-<p style="text-align:center;margin-top:28px">
-  <a href="/poets/{esc(poet['id'])}.html" style="color:var(--gold)">قصائد أخرى لـ{esc(poet['name'])} ←</a>
-</p>"""
+{related_html}"""
     else:
         verses_html = render_verses(poem.get("verses"))
         body = f"""
+{breadcrumb_nav}
 <div class="poem-header">
   <h1>{esc(poem["title"])}</h1>
   <div class="poem-meta">{esc(poet["name"])}{f' · {esc(poem.get("date"))}' if poem.get("date") else ""}{f' · {esc(poem.get("meter"))}' if poem.get("meter") else ""}</div>
 </div>
 {f'<div class="verses">{verses_html}</div>' if verses_html else '<p style="text-align:center;color:var(--text-faint)">لم تُحفظ أبيات هذه القصيدة في الديوان بعد</p>'}
+{info_html}
 {responses_html}
-<p style="text-align:center;margin-top:28px">
-  <a href="/poets/{esc(poet['id'])}.html" style="color:var(--gold)">قصائد أخرى لـ{esc(poet['name'])} ←</a>
-</p>"""
+{related_html}"""
 
     html_doc = page_shell(title, description, canonical, body, poem_json_ld(poet, poem, canonical, is_external))
     return poem["id"] + ".html", html_doc
@@ -263,8 +354,9 @@ def build_poem_page(item, all_poems, responses_map):
 
 def build_poet_page(poet):
     canonical = f"{SITE_URL}/poets/{poet['id']}.html"
-    title = f'قصائد {poet["name"]} | ديوان آل السويلم'
-    description = poet.get("bio") or f'كل قصائد {poet["name"]} في ديوان آل السويلم'
+    title = f'قصائد {poet["name"]} | {SITE_NAME}'
+    description = poet.get("bio") or f'كل قصائد {poet["name"]} في {SITE_NAME}'
+    breadcrumb_nav = breadcrumb_html(poet_breadcrumb_items(poet, canonical))
 
     cards = []
     for poem in poet.get("poems", []):
@@ -276,27 +368,89 @@ def build_poet_page(poet):
 </a>""")
 
     photo_html = (
-        f'<img src="{esc(poet["photo"])}" alt="{esc(poet["name"])}" width="52" height="52" '
+        f'<img src="{esc(poet["photo"])}" alt="{esc("صورة الشاعر " + poet["name"])}" width="52" height="52" '
         f'style="width:52px;height:52px;border-radius:50%;object-fit:cover" loading="lazy" decoding="async" />'
         if poet.get("photo") else ""
     )
+    bio_section = (
+        f'<span class="section-label">نبذة عن الشاعر</span><p style="max-width:680px;margin:0 auto;color:var(--text-muted)">{esc(poet["bio"])}</p>'
+        if poet.get("bio") else ""
+    )
     body = f"""
+{breadcrumb_nav}
 <div class="poet-bio-banner">
   {photo_html}
-  <div><h1>{esc(poet["name"])}</h1><p>{esc(poet.get("bio", ""))}</p></div>
+  <div><h1>{esc(poet["name"])}</h1></div>
 </div>
+{bio_section}
+<span class="section-label">قصائد الشاعر ({len(poet.get("poems", []))})</span>
 <div class="poems-grid">{"".join(cards)}</div>
-<p style="text-align:center;margin-top:20px"><a href="/" style="color:var(--gold)">تصفّح كل شعراء الديوان ←</a></p>"""
+<p style="text-align:center;margin-top:20px"><a href="/poets/" style="color:var(--gold)">تصفّح كل شعراء الديوان ←</a></p>"""
 
     return poet["id"] + ".html", page_shell(title, description, canonical, body, poet_json_ld(poet, canonical))
+
+
+def build_poets_index_page(data):
+    """صفحة فهرس الشعراء — 'المستودع الرئيسي للشعراء' اللي تطلبه هيكلة SEO
+    (الرئيسية → الشعراء → شاعر). رابط ثابت ومباشر لكل شعراء الديوان."""
+    canonical = f"{SITE_URL}/poets/"
+    title = f"شعراء {SITE_NAME}"
+    description = f"فهرس كامل بشعراء أسرة آل السويلم في {SITE_NAME}، مع نبذة عن كل شاعر وعدد قصائده."
+    breadcrumb_nav = breadcrumb_html(simple_breadcrumb_items("الشعراء", canonical))
+
+    poets = data.get("poets", [])
+    cards = []
+    for poet in poets:
+        photo_html = (
+            f'<img src="{esc(poet["photo"])}" alt="{esc("صورة الشاعر " + poet["name"])}" loading="lazy" decoding="async" />'
+            if poet.get("photo") else ""
+        )
+        bio_snippet = esc(poet.get("bio", ""))
+        count = len(poet.get("poems", []))
+        cards.append(f"""
+<a href="/poets/{esc(poet['id'])}.html" class="poets-index-card">
+  {photo_html}
+  <div><h2>{esc(poet["name"])}</h2><p>{bio_snippet}{" — " if bio_snippet else ""}{count} قصيدة</p></div>
+</a>""")
+
+    respondents_link = (
+        '<p style="text-align:center;margin-top:24px"><a href="/respondents.html" style="color:var(--gold)">شعراء من خارج آل السويلم تجاوبوا مع الديوان ←</a></p>'
+        if data.get("externalPoets") else ""
+    )
+
+    body = f"""
+{breadcrumb_nav}
+<div class="poet-bio-banner">
+  <div><h1>شعراء {SITE_NAME}</h1><p>{esc(description)}</p></div>
+</div>
+<div class="poets-index-grid">{"".join(cards)}</div>
+{respondents_link}"""
+
+    item_list = {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "name": f"شعراء {SITE_NAME}",
+        "itemListElement": [
+            {
+                "@type": "ListItem", "position": i + 1,
+                "item": {"@type": "Person", "name": p["name"], "url": f"{SITE_URL}/poets/{p['id']}.html"},
+            }
+            for i, p in enumerate(poets)
+        ],
+    }
+    breadcrumb = breadcrumb_json_ld(simple_breadcrumb_items("الشعراء", canonical))
+    json_ld = ld_scripts(item_list, breadcrumb)
+
+    return page_shell(title, description, canonical, body, json_ld)
 
 
 def build_external_poets_page(data):
     """صفحة واحدة تجمع كل الشعراء من خارج آل السويلم اللي تجاوبوا مع الديوان عبر الزمن —
     كل قصيدة تربط لصفحتها المستقلة الموجودة أصلاً (نفس صفحات /poems/ العادية)."""
     canonical = f"{SITE_URL}/respondents.html"
-    title = "شعراء تجاوبوا مع الديوان | ديوان آل السويلم"
+    title = f"شعراء تجاوبوا مع الديوان | {SITE_NAME}"
     description = "شعراء من خارج آل السويلم شاركوا في مساجلات ومجاراة مع شعراء الديوان عبر الزمن."
+    breadcrumb_nav = breadcrumb_html(simple_breadcrumb_items("شعراء تجاوبوا مع الديوان", canonical))
 
     sections = []
     for poet in data.get("externalPoets", []):
@@ -311,18 +465,44 @@ def build_external_poets_page(data):
 </div>""")
 
     body = f"""
+{breadcrumb_nav}
 <div class="poet-bio-banner">
   <div><h1>شعراء تجاوبوا مع الديوان</h1><p>{esc(description)}</p></div>
 </div>
 <div class="respondents-wrap">{"".join(sections)}</div>
-<p style="text-align:center;margin-top:20px"><a href="/" style="color:var(--gold)">تصفّح شعراء الديوان الأساسيين ←</a></p>"""
+<p style="text-align:center;margin-top:20px"><a href="/poets/" style="color:var(--gold)">تصفّح شعراء الديوان الأساسيين ←</a></p>"""
 
-    return "respondents.html", page_shell(title, description, canonical, body)
+    breadcrumb = breadcrumb_json_ld(simple_breadcrumb_items("شعراء تجاوبوا مع الديوان", canonical))
+    return "respondents.html", page_shell(title, description, canonical, body, ld_scripts(breadcrumb))
 
 
-def build_sitemap(urls):
-    entries = "\n".join(f"  <url><loc>{esc(u)}</loc></url>" for u in urls)
-    return f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{entries}\n</urlset>\n'
+def build_404_page():
+    canonical = f"{SITE_URL}/404.html"
+    title = f"الصفحة غير موجودة | {SITE_NAME}"
+    description = "الصفحة اللي تبحث عنها مو موجودة أو انتقلت مكان ثاني."
+    body = f"""
+<div class="not-found">
+  <p class="code">404</p>
+  <h1>الصفحة غير موجودة</h1>
+  <p>يمكن الرابط قديم أو انكتب غلط. جرّب تتصفّح الديوان من الروابط تحت.</p>
+  <div class="actions">
+    <a href="/">الصفحة الرئيسية</a>
+    <a href="/poets/">كل الشعراء</a>
+  </div>
+</div>"""
+    return page_shell(title, description, canonical, body, robots="noindex, follow")
+
+
+def build_sitemap(entries):
+    """entries: قائمة (url, lastmod_or_None) — lastmod يُكتب فقط لو متوفر فعلياً، بدون اختلاق تواريخ."""
+    rows = []
+    for url, lastmod in entries:
+        if lastmod:
+            rows.append(f"  <url><loc>{esc(url)}</loc><lastmod>{esc(lastmod)}</lastmod></url>")
+        else:
+            rows.append(f"  <url><loc>{esc(url)}</loc></url>")
+    entries_xml = "\n".join(rows)
+    return f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{entries_xml}\n</urlset>\n'
 
 
 def build_robots(sitemap_url):
@@ -342,7 +522,7 @@ def update_index_links(data):
     end_marker = "<!-- SEO-LINKS-END -->"
     if start_marker not in html_doc or end_marker not in html_doc:
         return
-    links = "\n    ".join(
+    links = '<a href="/poets/">كل الشعراء</a>\n    ' + "\n    ".join(
         f'<a href="/poets/{esc(p["id"])}.html">{esc(p["name"])}</a>'
         for p in data.get("poets", [])
     )
@@ -379,21 +559,25 @@ def main():
     POEMS_DIR.mkdir(exist_ok=True)
     POETS_DIR.mkdir(exist_ok=True)
 
-    urls = [SITE_URL + "/"]
+    sitemap_entries = [(SITE_URL + "/", None)]
     poem_filenames = set()
-    poet_filenames = set()
+    poet_filenames = {"index.html"}  # فهرس الشعراء موجود بنفس مجلد poets/ ولازم ما يُحذف كصفحة "يتيمة"
 
     for item in all_poems:
         fname, html_doc = build_poem_page(item, all_poems, responses_map)
         (POEMS_DIR / fname).write_text(html_doc, encoding="utf-8")
         poem_filenames.add(fname)
-        urls.append(f"{SITE_URL}/poems/{fname}")
+        lastmod = item["poem"].get("addedAt")
+        sitemap_entries.append((f"{SITE_URL}/poems/{fname}", lastmod))
 
     for poet in data.get("poets", []):
         fname, html_doc = build_poet_page(poet)
         (POETS_DIR / fname).write_text(html_doc, encoding="utf-8")
         poet_filenames.add(fname)
-        urls.append(f"{SITE_URL}/poets/{fname}")
+        sitemap_entries.append((f"{SITE_URL}/poets/{fname}", None))
+
+    (POETS_DIR / "index.html").write_text(build_poets_index_page(data), encoding="utf-8")
+    sitemap_entries.append((f"{SITE_URL}/poets/", None))
 
     clean_stale_pages(POEMS_DIR, poem_filenames)
     clean_stale_pages(POETS_DIR, poet_filenames)
@@ -402,15 +586,17 @@ def main():
     if data.get("externalPoets"):
         fname, html_doc = build_external_poets_page(data)
         (ROOT / fname).write_text(html_doc, encoding="utf-8")
-        urls.append(f"{SITE_URL}/{fname}")
+        sitemap_entries.append((f"{SITE_URL}/{fname}", None))
     elif respondents_path.exists():
         respondents_path.unlink()
 
-    (ROOT / "sitemap.xml").write_text(build_sitemap(urls), encoding="utf-8")
+    (ROOT / "404.html").write_text(build_404_page(), encoding="utf-8")
+
+    (ROOT / "sitemap.xml").write_text(build_sitemap(sitemap_entries), encoding="utf-8")
     (ROOT / "robots.txt").write_text(build_robots(f"{SITE_URL}/sitemap.xml"), encoding="utf-8")
 
-    print(f"✓ built {len(all_poems)} poem pages, {len(data.get('poets', []))} poet pages")
-    print(f"✓ sitemap.xml with {len(urls)} URLs")
+    print(f"✓ built {len(all_poems)} poem pages, {len(data.get('poets', []))} poet pages + poets index + 404")
+    print(f"✓ sitemap.xml with {len(sitemap_entries)} URLs")
 
 
 if __name__ == "__main__":
