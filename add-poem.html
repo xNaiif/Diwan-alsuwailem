@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>إضافة قصيدة — ديوان آل السويلم</title>
+<title>إدارة القصائد — ديوان آل السويلم</title>
 <meta name="robots" content="noindex,nofollow"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self' https://api.github.com; base-uri 'self'; form-action 'none'"/>
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"/>
@@ -56,12 +56,15 @@ summary::before{content:"⚙️ ";margin-left:4px}
 .notfound-badge{display:inline-block;background:var(--surface-2);color:var(--text-faint);border:1px dashed var(--border);border-radius:6px;padding:2px 10px;font-size:.8rem;margin-top:6px}
 .toggle-add-missing{margin-top:10px;background:none;border:1px dashed var(--gold);color:var(--gold);width:100%}
 .new-poet-fields,.mujarat-fields,.add-missing-fields{margin-top:10px;padding:12px;background:rgba(201,162,39,.05);border:1px dashed var(--border);border-radius:8px}
+#main-tabs{display:none;margin-top:16px}
+.tab-panel{display:none}
+button.danger{background:#b3462c;border-color:#b3462c;color:#fff;font-weight:600}
 </style>
 </head>
 <body>
 
 <h1>ديوان آل السويلم</h1>
-<p class="hint">إضافة قصائد مباشرة بدون تعديل يدوي على الملفات</p>
+<p class="hint">إضافة أو تعديل أو حذف قصائد مباشرة بدون فتح أي كود</p>
 
 <details id="settings-panel">
   <summary>إعدادات GitHub</summary>
@@ -86,7 +89,13 @@ summary::before{content:"⚙️ ";margin-left:4px}
   <p id="status" style="color:var(--text-muted);font-size:.9rem">يحمّل البيانات…</p>
 </div>
 
-<form id="poem-form" style="display:none">
+<div class="mode-tabs" id="main-tabs">
+  <button type="button" class="mode-tab active" onclick="setMainTab('add')">➕ إضافة</button>
+  <button type="button" class="mode-tab" onclick="setMainTab('edit')">✏️ تعديل</button>
+  <button type="button" class="mode-tab" onclick="setMainTab('delete')">🗑️ حذف</button>
+</div>
+
+<form id="poem-form" class="tab-panel" style="display:none">
 
   <fieldset>
     <legend>نوع الإضافة</legend>
@@ -197,6 +206,62 @@ summary::before{content:"⚙️ ";margin-left:4px}
   </div>
 </form>
 
+<!-- ================================================================
+     تبويب: تعديل قصيدة موجودة
+     ================================================================ -->
+<div id="edit-panel" class="tab-panel">
+  <fieldset>
+    <legend>ابحث عن القصيدة</legend>
+    <label>اكتب اسم الشاعر أو عنوان القصيدة</label>
+    <input type="text" id="edit-search" list="edit-poem-datalist" placeholder="اكتب اسم الشاعر أو عنوان القصيدة…" oninput="onEditSearch()"/>
+    <datalist id="edit-poem-datalist"></datalist>
+    <div id="edit-found-badge"></div>
+  </fieldset>
+
+  <div id="edit-fields" class="hidden-section">
+    <fieldset>
+      <legend>الشاعر</legend>
+      <div id="edit-poet-classification"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>بيانات القصيدة</legend>
+      <label>عنوان القصيدة</label>
+      <input type="text" id="edit-title"/>
+      <div class="row">
+        <div><label>التاريخ</label><input type="text" id="edit-date"/></div>
+        <div><label>المصدر</label><input type="text" id="edit-source"/></div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>الأبيات</legend>
+      <p class="hint">الصدر = النصف الأول، العجز = النصف الثاني.</p>
+      <div id="edit-verses-container"></div>
+      <button type="button" onclick="addEditVerseRow()">+ إضافة بيت</button>
+    </fieldset>
+
+    <div style="margin-top:16px">
+      <button type="button" class="primary" onclick="publishEdit()">💾 حفظ التعديلات</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     تبويب: حذف قصيدة
+     ================================================================ -->
+<div id="delete-panel" class="tab-panel">
+  <fieldset>
+    <legend>ابحث عن القصيدة المراد حذفها</legend>
+    <label>اكتب اسم الشاعر أو عنوان القصيدة</label>
+    <input type="text" id="delete-search" list="delete-poem-datalist" placeholder="اكتب اسم الشاعر أو عنوان القصيدة…" oninput="onDeleteSearch()"/>
+    <datalist id="delete-poem-datalist"></datalist>
+    <div id="delete-found-badge"></div>
+  </fieldset>
+
+  <div id="delete-preview" class="hidden-section"></div>
+</div>
+
 <div id="output-wrap">
   <p id="output-instructions" class="hint" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;line-height:1.8;margin-top:12px"></p>
   <textarea id="output" readonly style="margin-top:8px;min-height:180px"></textarea>
@@ -296,9 +361,23 @@ function retryInit(){ document.getElementById('status').textContent='يعيد ا
 
 function afterLoad(){
   document.getElementById('loader').style.display='none';
-  document.getElementById('poem-form').style.display='block';
+  document.getElementById('main-tabs').style.display='flex';
   rebuildPoetSelectors();
   addVerseRow(); addVerseRow();
+  setMainTab('add');
+}
+
+/* ===== التبويبات الرئيسية: إضافة / تعديل / حذف ===== */
+function setMainTab(tab){
+  const tabs = ['add','edit','delete'];
+  document.querySelectorAll('#main-tabs .mode-tab').forEach((t,i)=>{
+    t.classList.toggle('active', tabs[i]===tab);
+  });
+  document.getElementById('poem-form').style.display = tab==='add' ? 'block' : 'none';
+  document.getElementById('edit-panel').style.display = tab==='edit' ? 'block' : 'none';
+  document.getElementById('delete-panel').style.display = tab==='delete' ? 'block' : 'none';
+  document.getElementById('output-wrap').style.display='none';
+  document.getElementById('publish-status').style.display='none';
 }
 
 /* يبني قائمة الشعراء + قائمة الوسوم المتاحة + فهرس بحث القصايد — من حالة diwan الحالية بالذاكرة.
@@ -320,7 +399,6 @@ function rebuildPoetSelectors(){
     : `<option value="">لا يوجد وسم متاح</option>`;
 
   poemLookup = {};
-  const dl = document.getElementById('poem-datalist');
   let opts = '';
   diwan.poets.forEach(p=>p.poems.forEach(poem=>{
     const key = `${p.name} — ${poem.title}`;
@@ -332,7 +410,14 @@ function rebuildPoetSelectors(){
     poemLookup[key] = poem.id;
     opts += `<option value="${key}"></option>`;
   }));
-  dl.innerHTML = opts;
+  ['poem-datalist','edit-poem-datalist','delete-poem-datalist'].forEach(id=>{
+    const dl = document.getElementById(id);
+    if(dl) dl.innerHTML = opts;
+  });
+}
+
+function isExternalPoet(d, poetId){
+  return (d.externalPoets||[]).some(p=>p.id===poetId);
 }
 
 function toggleNewPoetFields(){
@@ -671,6 +756,255 @@ function resetForm(){
   window.scrollTo({top:0, behavior:'smooth'});
 }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ====================================================================
+   تبويب: تعديل قصيدة موجودة
+   ==================================================================== */
+let editPoemId = '';
+let pendingReclassify = null; // null | 'toExternal' | 'toFamily' — نقل الشاعر بين العائلة وخارجها
+
+function onEditSearch(){
+  const val = document.getElementById('edit-search').value.trim();
+  const badge = document.getElementById('edit-found-badge');
+  if(poemLookup[val]){
+    loadEditPoem(poemLookup[val]);
+    badge.innerHTML = `<span class="found-badge">✓ تم تحميل القصيدة</span>`;
+  } else {
+    editPoemId = '';
+    document.getElementById('edit-fields').classList.add('hidden-section');
+    badge.innerHTML = val ? `<span class="notfound-badge">ما لُقيت — اختر من قائمة الاقتراحات بالضبط</span>` : '';
+  }
+}
+
+function loadEditPoem(poemId){
+  const found = findPoemById(diwan, poemId);
+  if(!found) return;
+  editPoemId = poemId;
+  pendingReclassify = null;
+  const { poet, poem } = found;
+
+  renderEditPoetClassification(poet);
+
+  document.getElementById('edit-title').value = poem.title || '';
+  document.getElementById('edit-date').value = poem.date || '';
+  document.getElementById('edit-source').value = poem.source || '';
+
+  const c = document.getElementById('edit-verses-container');
+  c.innerHTML = '';
+  const verses = poem.verses || [];
+  if(verses.length){ verses.forEach(v=>addEditVerseRow(v.sadr, v.ajz)); }
+  else { addEditVerseRow(); }
+
+  document.getElementById('edit-fields').classList.remove('hidden-section');
+}
+
+function renderEditPoetClassification(poet){
+  const isExternal = isExternalPoet(diwan, poet.id);
+  const el = document.getElementById('edit-poet-classification');
+  const count = poet.poems.length;
+  const currentLabel = isExternal ? 'من خارج العائلة' : 'من داخل العائلة (آل السويلم)';
+  const toggleLabel = isExternal ? 'نقل الشاعر إلى داخل العائلة' : 'نقل الشاعر إلى خارج العائلة';
+  el.innerHTML = `
+    <p style="margin:0 0 8px;font-size:1rem">${esc(poet.name)}</p>
+    <p class="hint">هذا الشاعر حالياً: <b style="color:var(--text)">${esc(currentLabel)}</b> — وله ${count} قصيدة بالديوان.</p>
+    <button type="button" id="reclassify-btn" onclick="toggleReclassify()" style="border-color:var(--sky);color:var(--sky)">${esc(toggleLabel)}</button>
+    <p class="hint" id="reclassify-warning" style="display:none;color:var(--ember)"></p>`;
+  el.dataset.wasExternal = isExternal ? '1' : '0';
+}
+
+function toggleReclassify(){
+  const el = document.getElementById('edit-poet-classification');
+  const isExternal = el.dataset.wasExternal === '1';
+  pendingReclassify = pendingReclassify ? null : (isExternal ? 'toFamily' : 'toExternal');
+
+  const found = findPoemById(diwan, editPoemId);
+  const warn = document.getElementById('reclassify-warning');
+  const btn = document.getElementById('reclassify-btn');
+  if(pendingReclassify){
+    const count = found.poet.poems.length;
+    warn.style.display='block';
+    warn.textContent = `⚠️ سينتقل "${found.poet.name}" بكل قصائده الـ${count} إلى ${pendingReclassify==='toExternal' ? 'قائمة الشعراء من خارج العائلة' : 'قائمة شعراء العائلة'} عند حفظ التعديلات.`;
+    btn.textContent = 'إلغاء نقل الشاعر';
+  } else {
+    warn.style.display='none';
+    btn.textContent = isExternal ? 'نقل الشاعر إلى داخل العائلة' : 'نقل الشاعر إلى خارج العائلة';
+  }
+}
+
+function addEditVerseRow(sadr='', ajz=''){
+  const c = document.getElementById('edit-verses-container');
+  const n = c.children.length+1;
+  const d = document.createElement('div');
+  d.className='verse-row';
+  d.innerHTML = `<span class="verse-num">${n}</span>
+    <input type="text" placeholder="الصدر" class="edit-sadr-input" value="${esc(sadr)}"/>
+    <input type="text" placeholder="العجز" class="edit-ajz-input" value="${esc(ajz)}"/>
+    <button type="button" onclick="this.parentElement.remove();renum('#edit-verses-container .verse-num')">✕</button>`;
+  c.appendChild(d);
+}
+
+/* ينقل كائن الشاعر كامل (بكل قصائده) بين poets[] وexternalPoets[] على نسخة ديوان معيّنة —
+   يحافظ على نفس المعرّف (id) لكل قصيدة عشان روابطها بالموقع ما تنكسر */
+function applyReclassify(diwanCopy, poetId, direction){
+  const fromArr = direction==='toExternal' ? diwanCopy.poets : (diwanCopy.externalPoets||[]);
+  const idx = fromArr.findIndex(p=>p.id===poetId);
+  if(idx===-1) throw new Error('تعذّر إيجاد الشاعر لنقله — يمكن انعدّل من مكان ثاني.');
+  const [moved] = fromArr.splice(idx,1);
+
+  if(direction==='toExternal'){
+    delete moved.wasm;
+    delete moved.photo;
+  } else {
+    if(!moved.wasm){
+      const usedWasms = diwanCopy.poets.map(p=>p.wasm);
+      moved.wasm = WASM_OPTIONS.find(w=>!usedWasms.includes(w)) || WASM_OPTIONS[0];
+    }
+    if(moved.bio === undefined) moved.bio = '';
+  }
+  const toArrName = direction==='toExternal' ? 'externalPoets' : 'poets';
+  if(!diwanCopy[toArrName]) diwanCopy[toArrName] = [];
+  diwanCopy[toArrName].push(moved);
+}
+
+async function publishEdit(){
+  if(!editPoemId){ alert('اختر قصيدة أولاً من البحث.'); return; }
+  if(!settings.token){ alert('افتح إعدادات GitHub وأضف التوكن أولاً.'); document.getElementById('settings-panel').open=true; return; }
+
+  const title = document.getElementById('edit-title').value.trim();
+  if(!title){ alert('عنوان القصيدة لازم يبقى معبّى.'); return; }
+  const date = document.getElementById('edit-date').value.trim();
+  const source = document.getElementById('edit-source').value.trim();
+  const verses = [...document.querySelectorAll('#edit-verses-container .verse-row')]
+    .map(r=>({sadr:r.querySelector('.edit-sadr-input').value.trim(), ajz:r.querySelector('.edit-ajz-input').value.trim()}))
+    .filter(v=>v.sadr||v.ajz);
+
+  showPublishStatus('⏳ جاري حفظ التعديلات…', null);
+  try{
+    const repo = settings.repo;
+    const path = diwan.site?.dataPath || 'data/diwan.json';
+    const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
+    const headers = {'Authorization':`token ${settings.token}`, 'Accept':'application/vnd.github.v3+json', 'Content-Type':'application/json'};
+
+    const getRes = await fetch(apiUrl, {headers});
+    if(!getRes.ok) throw new Error('تعذّر قراءة الملف: '+getRes.status);
+    const fileInfo = await getRes.json();
+    const sha = fileInfo.sha;
+    const latestContent = JSON.parse(decodeURIComponent(escape(atob(fileInfo.content.replace(/\s/g,'')))));
+
+    const found = findPoemById(latestContent, editPoemId);
+    if(!found) throw new Error('القصيدة ما عادت موجودة بالديوان — يمكن انحذفت أو انعدّلت من مكان ثاني.');
+    const poetId = found.poet.id;
+
+    found.poem.title = title;
+    found.poem.date = date;
+    found.poem.source = source;
+    found.poem.verses = verses;
+
+    let noteExtra = '';
+    if(pendingReclassify){
+      applyReclassify(latestContent, poetId, pendingReclassify);
+      noteExtra = ` (نقل الشاعر إلى ${pendingReclassify==='toExternal' ? 'خارج' : 'داخل'} العائلة)`;
+    }
+
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(latestContent, null, 2))));
+    const putRes = await fetch(apiUrl, {method:'PUT', headers,
+      body: JSON.stringify({message:`تعديل قصيدة: ${title}${noteExtra}`, content:encoded, sha})});
+    if(!putRes.ok){ const err = await putRes.json(); throw new Error(err.message||'فشل الحفظ: '+putRes.status); }
+
+    diwan = latestContent;
+    pendingReclassify = null;
+    rebuildPoetSelectors();
+    showPublishStatus(`✅ تم حفظ التعديلات على "${title}"! التغييرات راح تظهر بالموقع كامل (صفحتها وصفحة الشاعر والفهرس) خلال دقيقة.`, true);
+  }catch(e){ showPublishStatus('❌ خطأ: '+e.message, false); }
+}
+
+/* ====================================================================
+   تبويب: حذف قصيدة
+   ==================================================================== */
+let deletePoemId = '';
+
+function onDeleteSearch(){
+  const val = document.getElementById('delete-search').value.trim();
+  const badge = document.getElementById('delete-found-badge');
+  if(poemLookup[val]){
+    loadDeletePreview(poemLookup[val]);
+    badge.innerHTML = `<span class="found-badge">✓ لُقيت</span>`;
+  } else {
+    deletePoemId = '';
+    document.getElementById('delete-preview').classList.add('hidden-section');
+    badge.innerHTML = val ? `<span class="notfound-badge">ما لُقيت — اختر من قائمة الاقتراحات بالضبط</span>` : '';
+  }
+}
+
+function countResponders(d, poemId){
+  let n = 0;
+  d.poets.forEach(p=>p.poems.forEach(poem=>{ if((poem.mujarat||{}).respondingToId===poemId) n++; }));
+  (d.externalPoets||[]).forEach(p=>p.poems.forEach(poem=>{ if((poem.mujarat||{}).respondingToId===poemId) n++; }));
+  return n;
+}
+
+function loadDeletePreview(poemId){
+  const found = findPoemById(diwan, poemId);
+  if(!found) return;
+  deletePoemId = poemId;
+  const { poet, poem } = found;
+
+  const respondersCount = countResponders(diwan, poemId);
+  const warn = respondersCount > 0
+    ? `<p class="hint" style="color:var(--ember)">⚠️ فيه ${respondersCount} قصيدة ${respondersCount===1?'ترد':'تردّ'} على هذي القصيدة بالديوان — حذفها بيخلي تلك الردود تُعرض بدون القصيدة الأصلية (هي نفسها ما بتنحذف).</p>`
+    : '';
+
+  document.getElementById('delete-preview').innerHTML = `
+    <fieldset style="border-color:#b3462c">
+      <legend style="color:#e0745a">تأكيد الحذف</legend>
+      <p style="margin:0 0 6px"><b>${esc(poet.name)}</b> — ${esc(poem.title)}</p>
+      <p class="hint" style="margin:0">${esc((poem.verses&&poem.verses[0]&&poem.verses[0].sadr)||'')}</p>
+      ${warn}
+      <button type="button" class="danger" onclick="publishDelete()" style="margin-top:12px">🗑️ احذف هذي القصيدة نهائياً من الديوان</button>
+    </fieldset>`;
+  document.getElementById('delete-preview').classList.remove('hidden-section');
+}
+
+async function publishDelete(){
+  if(!deletePoemId) return;
+  if(!settings.token){ alert('افتح إعدادات GitHub وأضف التوكن أولاً.'); document.getElementById('settings-panel').open=true; return; }
+  const found = findPoemById(diwan, deletePoemId);
+  if(!found) return;
+  if(!confirm(`متأكد تبي تحذف "${found.poem.title}" لـ${found.poet.name} نهائياً من الديوان؟ هذا يحذف صفحتها بالموقع بالكامل (تقدر ترجعها لاحقاً من تاريخ Git لو احتجت).`)) return;
+
+  showPublishStatus('⏳ جاري الحذف…', null);
+  try{
+    const repo = settings.repo;
+    const path = diwan.site?.dataPath || 'data/diwan.json';
+    const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
+    const headers = {'Authorization':`token ${settings.token}`, 'Accept':'application/vnd.github.v3+json', 'Content-Type':'application/json'};
+
+    const getRes = await fetch(apiUrl, {headers});
+    if(!getRes.ok) throw new Error('تعذّر قراءة الملف: '+getRes.status);
+    const fileInfo = await getRes.json();
+    const sha = fileInfo.sha;
+    const latestContent = JSON.parse(decodeURIComponent(escape(atob(fileInfo.content.replace(/\s/g,'')))));
+
+    const target = findPoemById(latestContent, deletePoemId);
+    if(!target) throw new Error('القصيدة ما عادت موجودة — يمكن انحذفت من مكان ثاني.');
+    const idx = target.poet.poems.findIndex(p=>p.id===deletePoemId);
+    if(idx===-1) throw new Error('تعذّر إيجاد القصيدة بالضبط داخل قائمة الشاعر.');
+    const [removed] = target.poet.poems.splice(idx,1);
+
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(latestContent, null, 2))));
+    const putRes = await fetch(apiUrl, {method:'PUT', headers,
+      body: JSON.stringify({message:`حذف قصيدة: ${removed.title}`, content:encoded, sha})});
+    if(!putRes.ok){ const err = await putRes.json(); throw new Error(err.message||'فشل الحذف: '+putRes.status); }
+
+    diwan = latestContent;
+    rebuildPoetSelectors();
+    deletePoemId = '';
+    document.getElementById('delete-preview').classList.add('hidden-section');
+    document.getElementById('delete-search').value = '';
+    document.getElementById('delete-found-badge').innerHTML = '';
+    showPublishStatus(`✅ تم حذف "${removed.title}" من الديوان. صفحتها بالموقع وبالفهرس بتختفي تلقائياً خلال دقيقة.`, true);
+  }catch(e){ showPublishStatus('❌ خطأ: '+e.message, false); }
+}
 
 init();
 </script>
