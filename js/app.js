@@ -82,16 +82,30 @@ async function init() {
   initBackToTop();
 }
 
-/* زر عائم يرجّع لأعلى الصفحة — يظهر بعد ما تنزل بالتمرير بمسافة معينة */
+/* زر عائم يرجّع لأعلى الصفحة — التنسيق كامل مضمّن هنا (مو بملف CSS منفصل)
+   عشان يشتغل دايماً بغض النظر عن تحديث style.css */
 function initBackToTop() {
   const btn = document.createElement("button");
   btn.id = "back-to-top";
   btn.setAttribute("aria-label", "الرجوع لأعلى الصفحة");
   btn.innerHTML = "↑";
+  btn.style.cssText = [
+    "position:fixed", "bottom:22px", "left:22px", "z-index:9999",
+    "width:46px", "height:46px", "border-radius:50%",
+    "background:var(--ember,#d9803f)", "color:#1a120b", "border:none",
+    "font-size:1.35rem", "line-height:1", "cursor:pointer",
+    "display:flex", "align-items:center", "justify-content:center",
+    "opacity:0", "pointer-events:none", "transform:translateY(12px)",
+    "transition:opacity .25s ease,transform .25s ease",
+    "box-shadow:0 4px 16px rgba(0,0,0,.4)"
+  ].join(";");
   btn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
   document.body.appendChild(btn);
   window.addEventListener("scroll", () => {
-    btn.classList.toggle("visible", window.scrollY > 420);
+    const show = window.scrollY > 420;
+    btn.style.opacity = show ? "1" : "0";
+    btn.style.pointerEvents = show ? "auto" : "none";
+    btn.style.transform = show ? "translateY(0)" : "translateY(12px)";
   });
 }
 
@@ -183,7 +197,13 @@ function renderGridView() {
   if (state.activePoet !== "all") items = items.filter(({ poet }) => poet.id === state.activePoet);
   if (state.query) {
     const q = state.query.toLowerCase();
-    items = items.filter(({ poem }) => poem.title.toLowerCase().includes(q));
+    items = items.filter(({ poem }) => {
+      if (poem.title.toLowerCase().includes(q)) return true;
+      return (poem.verses || []).some(v =>
+        (v.sadr && v.sadr.toLowerCase().includes(q)) ||
+        (v.ajz && v.ajz.toLowerCase().includes(q))
+      );
+    });
   }
 
   const bioBanner = renderBioBanner();
