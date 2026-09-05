@@ -196,6 +196,17 @@ function handleRoute() {
   renderGridView();
 }
 
+/* يوحّد النص العربي قبل المقارنة — يشيل التشكيل ويوحّد أشكال الألف/التاء المربوطة/الألف المقصورة
+   عشان البحث يتطابق حتى لو نص القصيدة فيه تشكيل والمستخدم كتب بدونه */
+function normalizeArabic(str) {
+  return String(str || "")
+    .replace(/[\u064B-\u065F\u0670]/g, "")
+    .replace(/[إأآا]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ى/g, "ي")
+    .toLowerCase();
+}
+
 function renderGridView() {
   el.poemDetail.classList.add("hidden");
   el.poemsGrid.classList.remove("hidden");
@@ -206,12 +217,12 @@ function renderGridView() {
   let items = getAllPoemsFlat().filter(({ isExternal }) => !isExternal);
   if (state.activePoet !== "all") items = items.filter(({ poet }) => poet.id === state.activePoet);
   if (state.query) {
-    const q = state.query.toLowerCase();
+    const q = normalizeArabic(state.query);
     items = items.filter(({ poem }) => {
-      if (poem.title.toLowerCase().includes(q)) return true;
+      if (normalizeArabic(poem.title).includes(q)) return true;
       return (poem.verses || []).some(v =>
-        (v.sadr && v.sadr.toLowerCase().includes(q)) ||
-        (v.ajz && v.ajz.toLowerCase().includes(q))
+        normalizeArabic(v.sadr).includes(q) ||
+        normalizeArabic(v.ajz).includes(q)
       );
     });
   }
