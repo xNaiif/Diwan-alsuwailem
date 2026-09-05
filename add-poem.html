@@ -492,7 +492,8 @@ function buildPoemData(){
 
   const poem = {title, role:currentRole, meter:'',
                 date:document.getElementById('poem-date').value.trim(),
-                source:document.getElementById('poem-source').value.trim(), verses};
+                source:document.getElementById('poem-source').value.trim(), verses,
+                addedAt:new Date().toISOString().slice(0,10)};
   if(m.mujarat) poem.mujarat = m.mujarat;
   if(m.pendingExternal) poem.pendingExternal = m.pendingExternal;
 
