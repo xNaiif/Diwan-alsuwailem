@@ -80,6 +80,16 @@ async function init() {
   handleRoute();
   window.addEventListener("hashchange", handleRoute);
   initBackToTop();
+  initCompactFilterBar();
+}
+
+/* شريط الفلاتر يصغّر تلقائياً وأنت تنزل بالصفحة — كل الأزرار تضل ظاهرة وقابلة للضغط، بدون أي إخفاء أو ضغطة إضافية */
+function initCompactFilterBar() {
+  const bar = document.querySelector(".filter-bar");
+  if (!bar) return;
+  window.addEventListener("scroll", () => {
+    bar.classList.toggle("compact", window.scrollY > 60);
+  });
 }
 
 /* زر عائم يرجّع لأعلى الصفحة — التنسيق كامل مضمّن هنا (مو بملف CSS منفصل)
