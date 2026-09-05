@@ -1,0 +1,16 @@
+{
+  "name": "ديوان آل السويلم",
+  "short_name": "ديوان آل السويلم",
+  "description": "ديوان يجمع قصائد إخوة آل السويلم في مكان واحد، مرتّبة وقابلة للفرز بحسب الشاعر.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#15110d",
+  "theme_color": "#15110d",
+  "icons": [
+    { "src": "/assets/favicon-32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "/assets/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/assets/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

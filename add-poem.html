@@ -4,6 +4,11 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>إضافة قصيدة — ديوان آل السويلم</title>
+<meta name="robots" content="noindex,nofollow"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self' https://api.github.com; base-uri 'self'; form-action 'none'"/>
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"/>
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png"/>
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png"/>
 <style>
 :root{--bg:#15110d;--surface:#211a13;--surface-2:#2a2118;--ember:#d9803f;--gold:#c9a227;--sage:#6f9a78;--sky:#5b8fa8;--text:#ede3d3;--text-muted:#b7a890;--text-faint:#8a7a64;--border:rgba(201,162,39,.18)}
 *{box-sizing:border-box}
@@ -60,9 +65,14 @@ summary::before{content:"⚙️ ";margin-left:4px}
 
 <details id="settings-panel">
   <summary>إعدادات GitHub</summary>
-  <label>GitHub Token (يُحفظ على جهازك فقط)</label>
-  <input type="password" id="gh-token" placeholder="github_pat_..."/>
-  <p class="hint">اضغط <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" style="color:var(--gold)">هنا</a> لإنشاء fine-grained token جديد — Repository access: Only select repositories (اختر الديوان) — Permissions → Contents: Read and write</p>
+  <p class="hint" style="background:rgba(217,128,63,.12);border:1px solid var(--ember);border-radius:8px;padding:10px;line-height:1.9;color:var(--text)">
+    ⚠️ <b>تنبيه أمني:</b> هذا التوكن يُخزَّن فقط داخل متصفحك على جهازك (localStorage) ولا يُرسل لأي جهة غير GitHub مباشرة — لكنه يعطي صلاحية كتابة على المستودع.
+    لا تلصقه أبداً على جهاز/متصفح عام أو مشترك، ولا تشاركه مع أحد. أنشئ دائماً <b>fine-grained token</b> محدود بهذا المستودع فقط (وليس بكل حساباتك)، وبصلاحية Contents: Read and write فقط، وبتاريخ انتهاء قريب. احذفه من إعدادات GitHub فور ما تنتهي من الإضافة إذا كنت على جهاز غير جهازك الشخصي.
+  </p>
+  <label>GitHub Token</label>
+  <input type="password" id="gh-token" placeholder="github_pat_..." autocomplete="off"/>
+  <p class="hint">اضغط <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="color:var(--gold)">هنا</a> لإنشاء fine-grained token جديد — Repository access: Only select repositories (اختر الديوان) — Permissions → Contents: Read and write</p>
+  <button onclick="clearToken()" style="margin-top:6px">حذف التوكن المحفوظ من هذا المتصفح</button>
   <label>المستودع</label>
   <input type="text" id="gh-repo" placeholder="xNaiif/Diwan-alsuwailem"/>
   <div style="margin-top:10px;display:flex;gap:8px">
@@ -221,6 +231,12 @@ function saveSettings(){
   settings.repo = document.getElementById('gh-repo').value.trim() || 'xNaiif/Diwan-alsuwailem';
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
   showConnStatus('تم الحفظ ✓', true);
+}
+function clearToken(){
+  settings.token = '';
+  document.getElementById('gh-token').value = '';
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  showConnStatus('تم حذف التوكن من هذا المتصفح ✓', true);
 }
 async function testConnection(){
   saveSettings();

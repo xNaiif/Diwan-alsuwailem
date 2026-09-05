@@ -72,6 +72,14 @@ def render_verses(verses):
     return "\n".join(rows)
 
 
+SITE_CSP = (
+    "default-src 'self'; img-src 'self' data:; "
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+    "font-src https://fonts.gstatic.com; script-src 'self'; connect-src 'self'; "
+    "base-uri 'self'; form-action 'self'"
+)
+
+
 def page_shell(title, description, canonical_url, body_html, json_ld=""):
     """القالب الأساسي المشترك لأي صفحة ثابتة، يعيد استخدام نفس css/style.css."""
     return f"""<!DOCTYPE html>
@@ -82,13 +90,25 @@ def page_shell(title, description, canonical_url, body_html, json_ld=""):
 <title>{esc(title)}</title>
 <meta name="description" content="{esc(description)}" />
 <link rel="canonical" href="{esc(canonical_url)}" />
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png" />
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+<link rel="manifest" href="/manifest.webmanifest" />
 
 <meta property="og:type" content="article" />
 <meta property="og:title" content="{esc(title)}" />
 <meta property="og:description" content="{esc(description)}" />
 <meta property="og:url" content="{esc(canonical_url)}" />
+<meta property="og:image" content="{SITE_URL}/assets/og-image.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
 <meta property="og:locale" content="ar_SA" />
-<meta name="twitter:card" content="summary" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="{esc(title)}" />
+<meta name="twitter:description" content="{esc(description)}" />
+<meta name="twitter:image" content="{SITE_URL}/assets/og-image.jpg" />
+<meta name="theme-color" content="#15110d" />
+<meta http-equiv="Content-Security-Policy" content="{SITE_CSP}" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -102,7 +122,7 @@ def page_shell(title, description, canonical_url, body_html, json_ld=""):
   <div class="hero-inner">
     <a href="/" style="text-decoration:none">
       <p class="hero-eyebrow">ديوان أسرة</p>
-      <h1 class="hero-title" style="font-size:clamp(1.8rem,6vw,2.6rem)">آل السويلم</h1>
+      <p class="hero-title" style="font-size:clamp(1.8rem,6vw,2.6rem)">آل السويلم</p>
     </a>
   </div>
 </header>
@@ -118,11 +138,11 @@ def page_shell(title, description, canonical_url, body_html, json_ld=""):
 </html>"""
 
 
-def poem_json_ld(poet, poem, canonical_url):
+def poem_json_ld(poet, poem, canonical_url, is_external):
     verses_text = " / ".join(
         f'{v.get("sadr","")} … {v.get("ajz","")}' for v in (poem.get("verses") or [])
     )
-    data = {
+    creative_work = {
         "@context": "https://schema.org",
         "@type": "CreativeWork",
         "name": poem.get("title"),
@@ -132,9 +152,41 @@ def poem_json_ld(poet, poem, canonical_url):
         "url": canonical_url,
     }
     if poem.get("date"):
-        data["dateCreated"] = poem["date"]
+        creative_work["dateCreated"] = poem["date"]
     if verses_text:
-        data["text"] = verses_text[:2000]
+        creative_work["text"] = verses_text[:2000]
+
+    breadcrumb = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "ديوان آل السويلم", "item": f"{SITE_URL}/"},
+        ],
+    }
+    if not is_external:
+        breadcrumb["itemListElement"].append(
+            {"@type": "ListItem", "position": 2, "name": poet.get("name"), "item": f"{SITE_URL}/poets/{poet['id']}.html"}
+        )
+    breadcrumb["itemListElement"].append(
+        {"@type": "ListItem", "position": len(breadcrumb["itemListElement"]) + 1, "name": poem.get("title"), "item": canonical_url}
+    )
+
+    return (
+        f'<script type="application/ld+json">{json.dumps(creative_work, ensure_ascii=False)}</script>\n'
+        f'<script type="application/ld+json">{json.dumps(breadcrumb, ensure_ascii=False)}</script>'
+    )
+
+
+def poet_json_ld(poet, canonical_url):
+    data = {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": poet.get("name"),
+        "url": canonical_url,
+        "description": poet.get("bio") or None,
+        "image": f"{SITE_URL}{poet['photo']}" if poet.get("photo") else None,
+    }
+    data = {k: v for k, v in data.items() if v is not None}
     return f'<script type="application/ld+json">{json.dumps(data, ensure_ascii=False)}</script>'
 
 
@@ -184,7 +236,7 @@ def build_poem_page(item, all_poems, responses_map):
     <div class="chain-poet-label">{esc(poet["name"])}
       {f'<span class="poem-meta">· {esc(poem.get("date"))}</span>' if poem.get("date") else ""}
     </div>
-    <h2 class="chain-title">{esc(poem["title"])}</h2>
+    <h1 class="chain-title">{esc(poem["title"])}</h1>
     <div class="verses chain-verses">{resp_verses}</div>
   </div>
 </div>
@@ -196,7 +248,7 @@ def build_poem_page(item, all_poems, responses_map):
         verses_html = render_verses(poem.get("verses"))
         body = f"""
 <div class="poem-header">
-  <h2>{esc(poem["title"])}</h2>
+  <h1>{esc(poem["title"])}</h1>
   <div class="poem-meta">{esc(poet["name"])}{f' · {esc(poem.get("date"))}' if poem.get("date") else ""}{f' · {esc(poem.get("meter"))}' if poem.get("meter") else ""}</div>
 </div>
 {f'<div class="verses">{verses_html}</div>' if verses_html else '<p style="text-align:center;color:var(--text-faint)">لم تُحفظ أبيات هذه القصيدة في الديوان بعد</p>'}
@@ -205,7 +257,7 @@ def build_poem_page(item, all_poems, responses_map):
   <a href="/poets/{esc(poet['id'])}.html" style="color:var(--gold)">قصائد أخرى لـ{esc(poet['name'])} ←</a>
 </p>"""
 
-    html_doc = page_shell(title, description, canonical, body, poem_json_ld(poet, poem, canonical))
+    html_doc = page_shell(title, description, canonical, body, poem_json_ld(poet, poem, canonical, is_external))
     return poem["id"] + ".html", html_doc
 
 
@@ -219,18 +271,24 @@ def build_poet_page(poet):
         first_verse = poem.get("verses", [{}])[0].get("sadr", "") if poem.get("verses") else ""
         cards.append(f"""
 <a href="/poems/{esc(poem['id'])}.html" class="poem-card" style="display:block;text-decoration:none;margin-bottom:14px">
-  <h3>{esc(poem["title"])}</h3>
+  <h2>{esc(poem["title"])}</h2>
   <p>{esc(first_verse)}</p>
 </a>""")
 
+    photo_html = (
+        f'<img src="{esc(poet["photo"])}" alt="{esc(poet["name"])}" width="52" height="52" '
+        f'style="width:52px;height:52px;border-radius:50%;object-fit:cover" loading="lazy" decoding="async" />'
+        if poet.get("photo") else ""
+    )
     body = f"""
 <div class="poet-bio-banner">
-  <div><h2>{esc(poet["name"])}</h2><p>{esc(poet.get("bio", ""))}</p></div>
+  {photo_html}
+  <div><h1>{esc(poet["name"])}</h1><p>{esc(poet.get("bio", ""))}</p></div>
 </div>
 <div class="poems-grid">{"".join(cards)}</div>
 <p style="text-align:center;margin-top:20px"><a href="/" style="color:var(--gold)">تصفّح كل شعراء الديوان ←</a></p>"""
 
-    return poet["id"] + ".html", page_shell(title, description, canonical, body)
+    return poet["id"] + ".html", page_shell(title, description, canonical, body, poet_json_ld(poet, canonical))
 
 
 def build_external_poets_page(data):
@@ -248,13 +306,13 @@ def build_external_poets_page(data):
         )
         sections.append(f"""
 <div class="respondent-block">
-  <h3>{esc(poet["name"])}</h3>
+  <h2>{esc(poet["name"])}</h2>
   <ul class="respondent-list">{items}</ul>
 </div>""")
 
     body = f"""
 <div class="poet-bio-banner">
-  <div><h2>شعراء تجاوبوا مع الديوان</h2><p>{esc(description)}</p></div>
+  <div><h1>شعراء تجاوبوا مع الديوان</h1><p>{esc(description)}</p></div>
 </div>
 <div class="respondents-wrap">{"".join(sections)}</div>
 <p style="text-align:center;margin-top:20px"><a href="/" style="color:var(--gold)">تصفّح شعراء الديوان الأساسيين ←</a></p>"""
@@ -300,6 +358,17 @@ def update_index_links(data):
     INDEX_PATH.write_text(before + block + after, encoding="utf-8")
 
 
+def clean_stale_pages(directory, expected_filenames):
+    """يحذف أي صفحة HTML متبقية من قصائد/شعراء أُزيلوا من data/diwan.json —
+    يمنع بقاء صفحات يتيمة مهجورة على الاستضافة وبفهرسة جوجل."""
+    if not directory.exists():
+        return
+    for existing in directory.glob("*.html"):
+        if existing.name not in expected_filenames:
+            existing.unlink()
+            print(f"✓ removed stale page {existing}")
+
+
 def main():
     data = load_data()
     all_poems = flat_poems(data)
@@ -311,21 +380,31 @@ def main():
     POETS_DIR.mkdir(exist_ok=True)
 
     urls = [SITE_URL + "/"]
+    poem_filenames = set()
+    poet_filenames = set()
 
     for item in all_poems:
         fname, html_doc = build_poem_page(item, all_poems, responses_map)
         (POEMS_DIR / fname).write_text(html_doc, encoding="utf-8")
+        poem_filenames.add(fname)
         urls.append(f"{SITE_URL}/poems/{fname}")
 
     for poet in data.get("poets", []):
         fname, html_doc = build_poet_page(poet)
         (POETS_DIR / fname).write_text(html_doc, encoding="utf-8")
+        poet_filenames.add(fname)
         urls.append(f"{SITE_URL}/poets/{fname}")
 
+    clean_stale_pages(POEMS_DIR, poem_filenames)
+    clean_stale_pages(POETS_DIR, poet_filenames)
+
+    respondents_path = ROOT / "respondents.html"
     if data.get("externalPoets"):
         fname, html_doc = build_external_poets_page(data)
         (ROOT / fname).write_text(html_doc, encoding="utf-8")
         urls.append(f"{SITE_URL}/{fname}")
+    elif respondents_path.exists():
+        respondents_path.unlink()
 
     (ROOT / "sitemap.xml").write_text(build_sitemap(urls), encoding="utf-8")
     (ROOT / "robots.txt").write_text(build_robots(f"{SITE_URL}/sitemap.xml"), encoding="utf-8")

@@ -29,7 +29,7 @@ function wasmIcon(wasmId, extraStyle) {
 function poetMark(poet, sizeStyle) {
   const style = sizeStyle || "width:34px;height:34px;";
   if (poet.photo) {
-    return `<img src="${esc(poet.photo)}" class="poet-photo" style="${style}" alt="${esc(poet.name)}" />`;
+    return `<img src="${esc(poet.photo)}" class="poet-photo" style="${style}" alt="${esc(poet.name)}" loading="lazy" decoding="async" />`;
   }
   return wasmIcon(poet.wasm, style);
 }
