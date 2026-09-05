@@ -233,6 +233,35 @@ def build_poet_page(poet):
     return poet["id"] + ".html", page_shell(title, description, canonical, body)
 
 
+def build_external_poets_page(data):
+    """صفحة واحدة تجمع كل الشعراء من خارج آل السويلم اللي تجاوبوا مع الديوان عبر الزمن —
+    كل قصيدة تربط لصفحتها المستقلة الموجودة أصلاً (نفس صفحات /poems/ العادية)."""
+    canonical = f"{SITE_URL}/respondents.html"
+    title = "شعراء تجاوبوا مع الديوان | ديوان آل السويلم"
+    description = "شعراء من خارج آل السويلم شاركوا في مساجلات ومجاراة مع شعراء الديوان عبر الزمن."
+
+    sections = []
+    for poet in data.get("externalPoets", []):
+        items = "\n".join(
+            f'<li><a href="/poems/{esc(poem["id"])}.html">{esc(poem["title"])}</a></li>'
+            for poem in poet.get("poems", [])
+        )
+        sections.append(f"""
+<div class="respondent-block">
+  <h3>{esc(poet["name"])}</h3>
+  <ul class="respondent-list">{items}</ul>
+</div>""")
+
+    body = f"""
+<div class="poet-bio-banner">
+  <div><h2>شعراء تجاوبوا مع الديوان</h2><p>{esc(description)}</p></div>
+</div>
+<div class="respondents-wrap">{"".join(sections)}</div>
+<p style="text-align:center;margin-top:20px"><a href="/" style="color:var(--gold)">تصفّح شعراء الديوان الأساسيين ←</a></p>"""
+
+    return "respondents.html", page_shell(title, description, canonical, body)
+
+
 def build_sitemap(urls):
     entries = "\n".join(f"  <url><loc>{esc(u)}</loc></url>" for u in urls)
     return f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{entries}\n</urlset>\n'
@@ -259,6 +288,9 @@ def update_index_links(data):
         f'<a href="/poets/{esc(p["id"])}.html">{esc(p["name"])}</a>'
         for p in data.get("poets", [])
     )
+    if data.get("externalPoets"):
+        links += '\n    <a href="/respondents.html">شعراء تجاوبوا مع الديوان</a>'
+
     block = (
         f'{start_marker}\n  <nav class="footer-links" aria-label="روابط سريعة لصفحات الشعراء">\n'
         f'    {links}\n  </nav>\n  {end_marker}'
@@ -289,6 +321,11 @@ def main():
         fname, html_doc = build_poet_page(poet)
         (POETS_DIR / fname).write_text(html_doc, encoding="utf-8")
         urls.append(f"{SITE_URL}/poets/{fname}")
+
+    if data.get("externalPoets"):
+        fname, html_doc = build_external_poets_page(data)
+        (ROOT / fname).write_text(html_doc, encoding="utf-8")
+        urls.append(f"{SITE_URL}/{fname}")
 
     (ROOT / "sitemap.xml").write_text(build_sitemap(urls), encoding="utf-8")
     (ROOT / "robots.txt").write_text(build_robots(f"{SITE_URL}/sitemap.xml"), encoding="utf-8")
