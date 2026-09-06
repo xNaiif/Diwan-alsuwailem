@@ -455,13 +455,23 @@ async function retryPage(n){
   if(running) return;
   showRunStatus('⏳ إعادة معالجة صفحة '+n+'…', 'info');
   setPageStatus(n, 'pending', 'جاري المعالجة…');
-  let pages;
-  try{ pages = await fileToPageBlobs(currentFile); }
+  let targetBlob;
+  try{
+    if(currentFile.type === 'application/pdf'){
+      const buf = await currentFile.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({data: buf, isEvalSupported: false}).promise;
+      const page = await pdf.getPage(n);
+      const bitmap = await renderPdfPageToBitmap(page);
+      targetBlob = await imageToCompressedBlob(bitmap);
+    } else {
+      const pages = await fileToPageBlobs(currentFile);
+      targetBlob = pages[0]?.blob;
+    }
+  }
   catch(e){ showRunStatus('❌ '+e.message, 'err'); return; }
-  const target = pages.find(p=>p.num===n);
-  if(!target) return;
+  if(!targetBlob) return;
   const engine = document.getElementById('engine-select').value;
-  const text = await ocrWithRetry(target.blob, n, engine);
+  const text = await ocrWithRetry(targetBlob, n, engine);
   if(text !== null){
     results[n] = text;
     setPageText(n, text);
