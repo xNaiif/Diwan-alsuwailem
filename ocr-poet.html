@@ -112,7 +112,7 @@ summary::before{content:"⚙️ ";margin-left:4px}
 
 <fieldset>
   <legend>الملف</legend>
-  <div class="dropzone" id="dropzone" onclick="document.getElementById('file-input').click()">
+  <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="اختر ملف صورة أو PDF" onclick="document.getElementById('file-input').click()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('file-input').click();}">
     <p>اضغط هنا أو اسحب صورة أو ملف PDF</p>
     <p class="hint">JPG, PNG, أو PDF (أي عدد صفحات)</p>
   </div>
