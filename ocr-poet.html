@@ -289,6 +289,7 @@ async function imageToCompressedBlob(bitmap){
     let quality = 0.9;
     while(quality >= 0.4){
       const blob = await new Promise(res=> canvas.toBlob(res, 'image/jpeg', quality));
+      if(!blob) throw new Error('تعذّر تحويل الصفحة إلى صورة (Blob)');
       lastBlob = blob;
       if(blob.size <= MAX_FILE_SIZE) return blob;
       quality -= 0.15;
