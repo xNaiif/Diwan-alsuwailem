@@ -384,7 +384,8 @@ async function ocrWithRetry(blob, num, engine){
         try{ const j = await res.json(); retryAfter = j.retryAfter || 60; }catch{}
         setPageStatus(num, 'err', `تجاوزت حد الطلبات — بينتظر ${retryAfter} ثانية ويعيد المحاولة تلقائيًا`);
         await countdownWait(retryAfter + 5, `تجاوزت حد الطلبات من OCR.space — الانتظار ${retryAfter+5} ثانية…`);
-        continue; // إعادة نفس المحاولة بدون ما تحسب من MAX_RETRIES بشكل صارم
+        attempt--; // لا نحتسب 429 ضمن عدد محاولات الصفحة
+        continue;
       }
 
       const json = await res.json();
