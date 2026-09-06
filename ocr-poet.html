@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>استخراج نصوص بالـ OCR — ديوان آل السويلم</title>
+<meta name="robots" content="noindex,nofollow"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'; worker-src 'self' blob:; connect-src 'self' https://api.ocr.space; base-uri 'self'; form-action 'none'"/>
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"/>
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png"/>
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png"/>
+<style>
+:root{--bg:#15110d;--surface:#211a13;--surface-2:#2a2118;--ember:#d9803f;--gold:#c9a227;--sage:#6f9a78;--sky:#5b8fa8;--text:#ede3d3;--text-muted:#b7a890;--text-faint:#8a7a64;--border:rgba(201,162,39,.18)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;line-height:1.6;padding:16px;max-width:760px;margin-inline:auto}
+h1{font-size:1.3rem;margin-bottom:2px}
+p.hint{color:var(--text-muted);font-size:.82rem;margin:4px 0 0}
+label{display:block;margin:14px 0 5px;font-size:.88rem;color:var(--text-muted)}
+input[type=text],input[type=password],input[type=number],select,textarea{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px;font-size:.93rem;font-family:inherit}
+textarea{resize:vertical}
+button{font-family:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);padding:9px 15px;font-size:.88rem}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.primary{background:var(--ember);color:#1a120b;border-color:var(--ember);font-weight:600}
+button.sage{background:var(--sage);color:#0d1a0f;border-color:var(--sage);font-weight:600}
+button.sky{background:var(--sky);color:#0a1520;border-color:var(--sky);font-weight:600}
+button.danger{background:#b3462c;border-color:#b3462c;color:#fff;font-weight:600}
+fieldset{border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:14px}
+legend{padding:0 6px;color:var(--gold);font-size:.88rem}
+.row{display:flex;gap:8px}.row>*{flex:1}
+details{border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:14px}
+summary{cursor:pointer;color:var(--text-muted);font-size:.85rem;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"⚙️ ";margin-left:4px}
+.info-box{background:rgba(91,143,168,.1);border:1px solid var(--sky);border-radius:8px;padding:12px;margin-top:10px;font-size:.85rem;line-height:1.9}
+.info-box b{color:var(--sky)}
+.info-box ul{margin:6px 0 0;padding-inline-start:20px}
+.warn-box{background:rgba(217,128,63,.12);border:1px solid var(--ember);border-radius:8px;padding:10px;line-height:1.9;color:var(--text);font-size:.85rem}
+.status-box{padding:12px;border-radius:8px;margin-top:10px;font-size:.85rem;display:none}
+.status-ok{background:rgba(111,154,120,.15);border:1px solid var(--sage);color:var(--sage)}
+.status-err{background:rgba(217,128,63,.15);border:1px solid var(--ember);color:var(--ember)}
+.status-info{background:rgba(201,162,39,.1);border:1px solid var(--gold);color:var(--gold)}
+.dropzone{border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;margin-top:10px;transition:border-color .15s}
+.dropzone:hover,.dropzone.drag{border-color:var(--gold)}
+.dropzone p{margin:0;color:var(--text-muted);font-size:.9rem}
+#file-name{margin-top:8px;font-size:.85rem;color:var(--gold)}
+.progress-wrap{margin-top:14px;display:none}
+.progress-bar-bg{background:var(--surface-2);border-radius:999px;height:10px;overflow:hidden}
+.progress-bar-fill{background:var(--ember);height:100%;width:0%;transition:width .3s}
+#progress-text{font-size:.85rem;color:var(--text-muted);margin-top:6px}
+#pages-wrap{margin-top:18px;display:none}
+.page-card{border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px}
+.page-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.page-num{color:var(--gold);font-weight:600;font-size:.88rem}
+.page-status{font-size:.78rem}
+.page-status.ok{color:var(--sage)}
+.page-status.err{color:var(--ember)}
+.page-status.pending{color:var(--text-faint)}
+.page-card textarea{min-height:90px;font-size:.85rem}
+.page-actions{margin-top:6px;display:flex;gap:6px}
+.page-actions button{padding:5px 10px;font-size:.78rem}
+#output-wrap{margin-top:20px;display:none}
+#output{width:100%;min-height:200px;font-family:monospace;font-size:.76rem}
+.actions-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+</style>
+</head>
+<body>
+
+<h1>ديوان آل السويلم</h1>
+<p class="hint">استخراج نصوص القصائد من صورة أو ملف PDF عبر OCR.space — النتيجة تظهر تحت صفحة بصفحة، وتقدر تنسخها أو تنزّلها</p>
+
+<details id="settings-panel">
+  <summary>إعدادات OCR.space</summary>
+  <p class="warn-box">
+    ⚠️ <b>تنبيه أمني:</b> مفتاح الـ API يُخزَّن فقط داخل متصفحك على جهازك (localStorage) ويُرسل مباشرة لـ OCR.space فقط عند الاستخراج — ما يمر على أي سيرفر ثالث.
+    لا تحط مفتاحك على جهاز/متصفح عام أو مشترك. مفاتيح OCR.space المجانية مجانية بالأصل، فلا خطورة كبيرة لو تسرب، بس الأفضل ما تشاركه لأن أي حد يقدر يستهلك حصتك اليومية/الشهرية به.
+  </p>
+  <label>مفتاح OCR.space API</label>
+  <input type="password" id="api-key" placeholder="مثال: K8xxxxxxxxxx" autocomplete="off"/>
+  <p class="hint">مفتاح تجريبي مجاني تقدر تسويه من <a href="https://ocr.space/ocrapi/freekey" target="_blank" rel="noopener" style="color:var(--gold)">هنا</a> خلال دقيقة (يوصلك على إيميلك).</p>
+  <div class="row">
+    <div>
+      <label>محرك OCR (Engine)</label>
+      <select id="engine-select">
+        <option value="3">Engine 3 — الأدق للعربي (موصى به)</option>
+        <option value="2">Engine 2 — بديل لو Engine 3 ضعيف بصفحة معيّنة</option>
+        <option value="1">Engine 1</option>
+      </select>
+    </div>
+    <div>
+      <label>التأخير بين كل طلب وطلب (ثانية)</label>
+      <input type="number" id="delay-input" value="65" min="2" step="1"/>
+    </div>
+  </div>
+  <p class="hint" id="delay-hint"></p>
+  <div style="margin-top:10px">
+    <button onclick="saveSettings()" class="primary">حفظ الإعدادات</button>
+    <button onclick="clearKey()">حذف المفتاح المحفوظ من هذا المتصفح</button>
+  </div>
+</details>
+
+<div class="info-box">
+  <b>معلومات مهمة عن حدود الخطة المجانية لـ OCR.space</b> (لازم تعرفها قبل لا تستخرج كمية كبيرة):
+  <ul>
+    <li>حجم الصورة الأقصى للطلب: <b>1 ميجابايت</b> — الصفحة تضغط كل صورة/صفحة تلقائيًا تحت هذا الحد.</li>
+    <li><b>Engine 3</b>: أقصى <b>60 طلب/ساعة</b> بالضبط (اكتشفناها عمليًا برسالة الخطأ — مو موثقة صراحة بالموقع الرسمي)، وحصة شهرية 2500 طلب.</li>
+    <li><b>Engine 1 / Engine 2</b>: حصة شهرية أكبر (25000 طلب)، وحد عام معلن 500 طلب/يوم لكل عنوان IP — الحد بالساعة لهما غير مؤكد فنخليه بتأخير أقل احتياطًا.</li>
+    <li>لو رفعت PDF متعدد الصفحات مباشرة للـ API (بدون تحويله لصور)، الخطة المجانية تسمح بـ 3 صفحات بس — لذا هذي الصفحة تحوّل كل صفحة PDF لصورة مستقلة أولًا وترسلها لحالها، فتتفادى هذا القيد.</li>
+    <li>إذا وصلك خطأ "Rate limit exceeded"، الصفحة توقف تلقائيًا وتكمل بعد الوقت المذكور بالخطأ (retryAfter) بدون ما تفقد الصفحات اللي خلصت.</li>
+    <li>التقدّم يُحفظ أول بأول بمتصفحك (localStorage) — لو سكّرت الصفحة أو انقطع النت، ارجع ارفع نفس الملف وبيكمل من وين وقف.</li>
+  </ul>
+</div>
+
+<fieldset>
+  <legend>الملف</legend>
+  <div class="dropzone" id="dropzone" onclick="document.getElementById('file-input').click()">
+    <p>اضغط هنا أو اسحب صورة أو ملف PDF</p>
+    <p class="hint">JPG, PNG, أو PDF (أي عدد صفحات)</p>
+  </div>
+  <input type="file" id="file-input" accept="application/pdf,image/*" style="display:none"/>
+  <div id="file-name"></div>
+  <div class="actions-row">
+    <button class="primary" id="start-btn" onclick="startExtraction()" disabled>🔍 ابدأ الاستخراج</button>
+    <button class="danger" id="cancel-btn" onclick="cancelExtraction()" style="display:none">⏹ إيقاف</button>
+    <button onclick="clearSavedResults()">🗑️ امسح النتائج المحفوظة لهذا الملف</button>
+  </div>
+</fieldset>
+
+<div class="progress-wrap" id="progress-wrap">
+  <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
+  <p id="progress-text"></p>
+</div>
+
+<div id="pages-wrap">
+  <fieldset>
+    <legend>النصوص المستخرجة</legend>
+    <div id="pages-container"></div>
+  </fieldset>
+</div>
+
+<div id="output-wrap">
+  <fieldset>
+    <legend>النص الكامل (كل الصفحات مجمّعة)</legend>
+    <textarea id="output" readonly></textarea>
+    <div class="actions-row">
+      <button class="primary" onclick="copyOutput()">📋 نسخ الكل</button>
+      <button class="sky" onclick="downloadTxt()">⬇️ تنزيل .txt</button>
+      <button class="sage" onclick="downloadJson()">⬇️ تنزيل .json</button>
+    </div>
+    <p id="copy-status" class="hint"></p>
+  </fieldset>
+</div>
+
+<div id="run-status" class="status-box"></div>
+
+<script src="js/vendor/pdf.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'js/vendor/pdf.worker.min.js';
+
+const SETTINGS_KEY = 'ocr_poet_settings';
+const OCR_API_URL = 'https://api.ocr.space/parse/image';
+const MAX_FILE_SIZE = 1024*1024; // 1MB — حد الخطة المجانية
+const MAX_RETRIES_PER_PAGE = 3;
+
+let settings = { apiKey:'', engine:'3', delay:65 };
+let currentFile = null;
+let currentFileKey = '';   // بصمة الملف (اسم+حجم+تاريخ تعديل) — تُستخدم لحفظ/استرجاع التقدم
+let pageImages = [];       // [{num, blob}]
+let results = {};          // {num: text}
+let cancelled = false;
+let running = false;
+
+/* ===== إعدادات ===== */
+function loadSettings(){
+  try{ settings = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || settings; }catch{}
+  document.getElementById('api-key').value = settings.apiKey || '';
+  document.getElementById('engine-select').value = settings.engine || '3';
+  document.getElementById('delay-input').value = settings.delay || 65;
+  updateDelayHint();
+}
+function saveSettings(){
+  settings.apiKey = document.getElementById('api-key').value.trim();
+  settings.engine = document.getElementById('engine-select').value;
+  settings.delay = parseInt(document.getElementById('delay-input').value, 10) || 65;
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  showRunStatus('تم حفظ الإعدادات ✓', 'ok');
+}
+function clearKey(){
+  settings.apiKey = '';
+  document.getElementById('api-key').value = '';
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  showRunStatus('تم حذف المفتاح من هذا المتصفح ✓', 'ok');
+}
+document.getElementById('engine-select').addEventListener('change', ()=>{
+  const eng = document.getElementById('engine-select').value;
+  document.getElementById('delay-input').value = eng==='3' ? 65 : 6;
+  updateDelayHint();
+});
+function updateDelayHint(){
+  const eng = document.getElementById('engine-select').value;
+  document.getElementById('delay-hint').textContent = eng==='3'
+    ? 'Engine 3 محدود فعليًا بـ 60 طلب/ساعة — خلّه 65 ثانية على الأقل (يعطيك أمان 55 طلب/ساعة).'
+    : 'الحد بالساعة لهذا المحرك غير موثق رسميًا — القيمة الافتراضية احتياطية، تقدر تقللها إذا ما واجهت أخطاء 429.';
+}
+
+/* ===== الملف والسحب-والإفلات ===== */
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', ()=> dz.classList.remove('drag'));
+dz.addEventListener('drop', e=>{
+  e.preventDefault(); dz.classList.remove('drag');
+  if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+document.getElementById('file-input').addEventListener('change', e=>{
+  if(e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+function fileFingerprint(f){ return `${f.name}_${f.size}_${f.lastModified}`; }
+
+async function handleFile(f){
+  if(!f.type.startsWith('image/') && f.type!=='application/pdf'){
+    alert('لازم يكون الملف صورة أو PDF.'); return;
+  }
+  currentFile = f;
+  currentFileKey = 'ocr_poet_results_' + fileFingerprint(f);
+  document.getElementById('file-name').textContent = `📄 ${f.name} (${(f.size/1024).toFixed(0)} كيلوبايت)`;
+  document.getElementById('start-btn').disabled = false;
+  document.getElementById('pages-wrap').style.display='none';
+  document.getElementById('output-wrap').style.display='none';
+  results = loadSavedResults();
+  if(Object.keys(results).length){
+    showRunStatus(`لقيت نتائج محفوظة سابقًا لهذا الملف بالضبط (${Object.keys(results).length} صفحة) — لو تضغط "ابدأ الاستخراج" بيكمل من الباقي فقط.`, 'info');
+  }
+}
+
+function loadSavedResults(){
+  try{ return JSON.parse(localStorage.getItem(currentFileKey)) || {}; }catch{ return {}; }
+}
+function persistResults(){
+  try{ localStorage.setItem(currentFileKey, JSON.stringify(results)); }catch{}
+}
+function clearSavedResults(){
+  if(!currentFileKey){ alert('ارفع ملف أولاً.'); return; }
+  localStorage.removeItem(currentFileKey);
+  results = {};
+  document.getElementById('pages-container').innerHTML='';
+  document.getElementById('pages-wrap').style.display='none';
+  document.getElementById('output-wrap').style.display='none';
+  showRunStatus('تم مسح النتائج المحفوظة لهذا الملف ✓', 'ok');
+}
+
+/* ===== تحويل الملف لصفحات/صور مضغوطة تحت 1MB ===== */
+async function fileToPageBlobs(f){
+  if(f.type==='application/pdf') return pdfToPageBlobs(f);
+  const blob = await imageToCompressedBlob(await createImageBitmap(f));
+  return [{num:1, blob}];
+}
+
+async function pdfToPageBlobs(f){
+  const buf = await f.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+  const pages = [];
+  for(let i=1;i<=pdf.numPages;i++){
+    const page = await pdf.getPage(i);
+    const bitmap = await renderPdfPageToBitmap(page);
+    const blob = await imageToCompressedBlob(bitmap);
+    pages.push({num:i, blob});
+  }
+  return pages;
+}
+
+async function renderPdfPageToBitmap(page, scale=2.5){
+  const viewport = page.getViewport({scale});
+  const canvas = document.createElement('canvas');
+  canvas.width = viewport.width; canvas.height = viewport.height;
+  const ctx = canvas.getContext('2d');
+  await page.render({canvasContext:ctx, viewport}).promise;
+  return createImageBitmap(canvas);
+}
+
+/* يضغط الصورة (JPEG، جودة متناقصة، ثم دقة متناقصة) لين تنزل تحت حد 1MB */
+async function imageToCompressedBlob(bitmap){
+  let scale = 1;
+  let lastBlob = null;
+  while(scale >= 0.3){
+    const w = Math.round(bitmap.width*scale), h = Math.round(bitmap.height*scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+    let quality = 0.9;
+    while(quality >= 0.4){
+      const blob = await new Promise(res=> canvas.toBlob(res, 'image/jpeg', quality));
+      lastBlob = blob;
+      if(blob.size <= MAX_FILE_SIZE) return blob;
+      quality -= 0.15;
+    }
+    scale -= 0.15;
+  }
+  return lastBlob;
+}
+
+/* ===== الاستخراج ===== */
+async function startExtraction(){
+  saveSettings();
+  if(!settings.apiKey){ alert('حط مفتاح OCR.space أولاً من الإعدادات.'); document.getElementById('settings-panel').open=true; return; }
+  if(!currentFile) return;
+
+  running = true; cancelled = false;
+  document.getElementById('start-btn').disabled = true;
+  document.getElementById('cancel-btn').style.display = 'inline-block';
+  document.getElementById('progress-wrap').style.display = 'block';
+  document.getElementById('pages-wrap').style.display = 'block';
+  showRunStatus('⏳ يجهّز صفحات الملف…', 'info');
+
+  let pages;
+  try{
+    pages = await fileToPageBlobs(currentFile);
+  }catch(e){
+    showRunStatus('❌ تعذّر معالجة الملف: '+e.message, 'err');
+    finishRun(); return;
+  }
+
+  results = loadSavedResults();
+  renderPageCards(pages.map(p=>p.num));
+  updateOutput();
+
+  const delay = Math.max(2, parseInt(document.getElementById('delay-input').value,10) || 65);
+  const engine = document.getElementById('engine-select').value;
+
+  for(const {num, blob} of pages){
+    if(cancelled) break;
+    if(results[num] && results[num].trim()){
+      setPageStatus(num, 'ok', 'مكتملة مسبقًا — تجاوز');
+      continue;
+    }
+    updateProgress(num, pages.length, 'جاري إرسال صفحة '+num+'…');
+    setPageStatus(num, 'pending', 'جاري المعالجة…');
+
+    const text = await ocrWithRetry(blob, num, engine);
+    if(cancelled) break;
+
+    if(text === null){
+      results[num] = '';
+      setPageStatus(num, 'err', 'فشلت كل المحاولات');
+    } else {
+      results[num] = text;
+      setPageText(num, text);
+      setPageStatus(num, 'ok', `تمت (${text.length} حرف)`);
+    }
+    persistResults();
+    updateOutput();
+
+    if(num !== pages[pages.length-1].num && !cancelled){
+      await countdownWait(delay, `الانتظار ${delay} ثانية قبل الصفحة التالية (لتفادي حد الطلبات)…`);
+    }
+  }
+
+  if(cancelled){
+    showRunStatus('⏹ تم الإيقاف — التقدّم محفوظ، تقدر تكمل لاحقًا بنفس الملف.', 'info');
+  } else {
+    const empty = Object.entries(results).filter(([,t])=>!t.trim()).length;
+    showRunStatus(empty ? `✅ خلص الاستخراج — ${empty} صفحة طلعت فاضية، اضغط "ابدأ الاستخراج" مرة ثانية عشان يعيد المحاولة عليها بس.` : '✅ خلص الاستخراج كامل بنجاح!', empty ? 'info' : 'ok');
+  }
+  finishRun();
+}
+
+async function ocrWithRetry(blob, num, engine){
+  for(let attempt=1; attempt<=MAX_RETRIES_PER_PAGE; attempt++){
+    if(cancelled) return null;
+    try{
+      const fd = new FormData();
+      fd.append('apikey', settings.apiKey);
+      fd.append('language', 'ara');
+      fd.append('OCREngine', engine);
+      fd.append('isOverlayRequired', 'false');
+      fd.append('scale', 'true');
+      fd.append('detectOrientation', 'true');
+      fd.append('file', blob, `page_${num}.jpg`);
+
+      const res = await fetch(OCR_API_URL, {method:'POST', body:fd});
+
+      if(res.status === 429){
+        let retryAfter = 60;
+        try{ const j = await res.json(); retryAfter = j.retryAfter || 60; }catch{}
+        setPageStatus(num, 'err', `تجاوزت حد الطلبات — بينتظر ${retryAfter} ثانية ويعيد المحاولة تلقائيًا`);
+        await countdownWait(retryAfter + 5, `تجاوزت حد الطلبات من OCR.space — الانتظار ${retryAfter+5} ثانية…`);
+        continue; // إعادة نفس المحاولة بدون ما تحسب من MAX_RETRIES بشكل صارم
+      }
+
+      const json = await res.json();
+      if(json.IsErroredOnProcessing){
+        const msg = Array.isArray(json.ErrorMessage) ? json.ErrorMessage.join('; ') : (json.ErrorMessage || json.ErrorDetails || 'خطأ غير معروف');
+        throw new Error(msg);
+      }
+      const text = (json.ParsedResults||[]).map(p=>p.ParsedText||'').join('\n').trim();
+      return text;
+    }catch(e){
+      setPageStatus(num, 'err', `محاولة ${attempt}/${MAX_RETRIES_PER_PAGE} فشلت: ${e.message}`);
+      if(attempt < MAX_RETRIES_PER_PAGE) await countdownWait(4*attempt, `إعادة المحاولة بعد ${4*attempt} ثانية…`);
+    }
+  }
+  return null;
+}
+
+function cancelExtraction(){ cancelled = true; showRunStatus('⏳ جاري الإيقاف بعد الطلب الحالي…', 'info'); }
+function finishRun(){
+  running = false;
+  document.getElementById('start-btn').disabled = false;
+  document.getElementById('cancel-btn').style.display = 'none';
+}
+
+async function countdownWait(seconds, label){
+  for(let s=seconds; s>0; s--){
+    if(cancelled) return;
+    document.getElementById('progress-text').textContent = `${label} (${s})`;
+    await new Promise(r=>setTimeout(r, 1000));
+  }
+}
+function updateProgress(current, total, label){
+  const pct = Math.round((current-1)/total*100);
+  document.getElementById('progress-fill').style.width = pct+'%';
+  document.getElementById('progress-text').textContent = `${label} — صفحة ${current} من ${total}`;
+}
+
+/* ===== واجهة الصفحات ===== */
+function renderPageCards(nums){
+  const c = document.getElementById('pages-container');
+  c.innerHTML = nums.map(n=>`
+    <div class="page-card" id="page-card-${n}">
+      <div class="page-card-head">
+        <span class="page-num">صفحة ${n}</span>
+        <span class="page-status pending" id="page-status-${n}">بالانتظار</span>
+      </div>
+      <textarea id="page-text-${n}" oninput="onPageEdit(${n})" dir="rtl">${esc(results[n]||'')}</textarea>
+      <div class="page-actions">
+        <button onclick="retryPage(${n})">🔄 إعادة المحاولة</button>
+      </div>
+    </div>`).join('');
+}
+function setPageStatus(n, cls, msg){
+  const el = document.getElementById('page-status-'+n);
+  if(el){ el.className = 'page-status '+cls; el.textContent = msg; }
+}
+function setPageText(n, text){
+  const el = document.getElementById('page-text-'+n);
+  if(el) el.value = text;
+}
+function onPageEdit(n){
+  results[n] = document.getElementById('page-text-'+n).value;
+  persistResults();
+  updateOutput();
+}
+async function retryPage(n){
+  if(running) return;
+  showRunStatus('⏳ إعادة معالجة صفحة '+n+'…', 'info');
+  setPageStatus(n, 'pending', 'جاري المعالجة…');
+  let pages;
+  try{ pages = await fileToPageBlobs(currentFile); }
+  catch(e){ showRunStatus('❌ '+e.message, 'err'); return; }
+  const target = pages.find(p=>p.num===n);
+  if(!target) return;
+  const engine = document.getElementById('engine-select').value;
+  const text = await ocrWithRetry(target.blob, n, engine);
+  if(text !== null){
+    results[n] = text;
+    setPageText(n, text);
+    setPageStatus(n, 'ok', `تمت (${text.length} حرف)`);
+  } else {
+    setPageStatus(n, 'err', 'فشلت كل المحاولات');
+  }
+  persistResults();
+  updateOutput();
+  showRunStatus('✅ انتهت إعادة المحاولة.', 'ok');
+}
+
+/* ===== الإخراج النهائي ===== */
+function updateOutput(){
+  const nums = Object.keys(results).map(Number).sort((a,b)=>a-b);
+  if(!nums.length) return;
+  const txt = nums.map(n=>`===== صفحة ${n} =====\n${(results[n]||'').trim()}`).join('\n\n');
+  document.getElementById('output').value = txt;
+  document.getElementById('output-wrap').style.display = 'block';
+}
+function copyOutput(){
+  const ta = document.getElementById('output'); ta.select();
+  const st = document.getElementById('copy-status');
+  if(navigator.clipboard?.writeText){
+    navigator.clipboard.writeText(ta.value).then(()=>{st.textContent='تم النسخ ✓';}).catch(()=>{st.textContent='النص محدد — انسخ يدوياً.';});
+  } else st.textContent='النص محدد — انسخ يدوياً.';
+}
+function downloadBlob(content, filename, type){
+  const blob = new Blob([content], {type});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+function downloadTxt(){
+  downloadBlob(document.getElementById('output').value, (currentFile?.name||'ocr')+'.txt', 'text/plain;charset=utf-8');
+}
+function downloadJson(){
+  downloadBlob(JSON.stringify(results, null, 2), (currentFile?.name||'ocr')+'.json', 'application/json;charset=utf-8');
+}
+
+function showRunStatus(msg, kind){
+  const el = document.getElementById('run-status');
+  el.textContent = msg;
+  el.className = 'status-box ' + (kind==='ok'?'status-ok':kind==='err'?'status-err':'status-info');
+  el.style.display = 'block';
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+loadSettings();
+</script>
+</body>
+</html>
