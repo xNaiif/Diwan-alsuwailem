@@ -208,7 +208,7 @@ def page_shell(title, description, canonical_url, body_html, json_ld="", robots=
 </html>"""
 
 
-def poem_json_ld(poet, poem, canonical_url, is_external):
+def poem_json_ld(poet, poem, canonical_url, is_external, poet_page_url, original_url=None):
     verses_text = " / ".join(
         f'{v.get("sadr","")} … {v.get("ajz","")}' for v in (poem.get("verses") or [])
     )
@@ -216,16 +216,22 @@ def poem_json_ld(poet, poem, canonical_url, is_external):
         "@context": "https://schema.org",
         "@type": "CreativeWork",
         "name": poem.get("title"),
+        "identifier": poem.get("id"),
         "author": {"@type": "Person", "name": poet.get("name")},
         "publisher": organization_dict(),
         "inLanguage": "ar",
         "genre": "شعر نبطي",
         "url": canonical_url,
+        "isPartOf": poet_page_url,
     }
     if poem.get("date"):
         creative_work["dateCreated"] = poem["date"]
     if verses_text:
         creative_work["text"] = verses_text[:2000]
+    if original_url:
+        # قصيدة رد أو مجاراة: نصرّح بالعلاقة ببيانات موصوفة (Schema.org) لا بس برابط HTML مرئي —
+        # عشان أي أداة/وكيل ذكاء اصطناعي تقدر تبني سلسلة القصائد المترابطة برمجياً
+        creative_work["citation"] = original_url
 
     breadcrumb = breadcrumb_json_ld(poem_breadcrumb_items(poet, poem, is_external, canonical_url))
     return ld_scripts(creative_work, breadcrumb)
@@ -366,7 +372,10 @@ def build_poem_page(item, all_poems, responses_map):
 {responses_html}
 {related_html}"""
 
-    html_doc = page_shell(title, description, canonical, body, poem_json_ld(poet, poem, canonical, is_external))
+    poet_page_url = f"{SITE_URL}/respondents.html" if is_external else f"{SITE_URL}/poets/{poet['id']}.html"
+    original_url = f"{SITE_URL}/poems/{original['poem']['id']}.html" if (is_chain and original) else None
+    json_ld = poem_json_ld(poet, poem, canonical, is_external, poet_page_url, original_url)
+    html_doc = page_shell(title, description, canonical, body, json_ld)
     return poem["id"] + ".html", html_doc
 
 
