@@ -18,6 +18,7 @@ from pathlib import Path
 
 SITE_URL = "https://diwan-alswilem.com"
 SITE_NAME = "ديوان آل السويلم"
+CSS_VERSION = "2"  # رفعه عند أي تعديل بـcss/style.css عشان يجبر المتصفحات تحمّل النسخة الجديدة
 ROOT = Path(__file__).resolve().parent.parent  # جذر المستودع
 DATA_PATH = ROOT / "data" / "diwan.json"
 POEMS_DIR = ROOT / "poems"
@@ -181,7 +182,7 @@ def page_shell(title, description, canonical_url, body_html, json_ld="", robots=
 <meta name="theme-color" content="#15110d" />
 <meta http-equiv="Content-Security-Policy" content="{SITE_CSP}" />
 
-<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/css/style.css?v={CSS_VERSION}" />
 {json_ld}
 </head>
 <body>
@@ -201,7 +202,7 @@ def page_shell(title, description, canonical_url, body_html, json_ld="", robots=
   <p>{SITE_NAME} — © {esc(str(datetime.date.today().year))}
     <span class="footer-note">هذه صفحة ثابتة لتسهيل الوصول والفهرسة — <a href="/" style="color:var(--gold)">تصفّح الديوان كامل من هنا</a></span>
   </p>
-  <p class="site-credit">by <b>N<img src="/assets/ai-mark.png" alt="ai" loading="lazy" decoding="async" />f</b></p>
+  <p class="site-credit">by <b>N<img src="/assets/ai-mark.png" alt="ai" width="19" height="14" loading="lazy" decoding="async" />f</b></p>
 </footer>
 </body>
 </html>"""
