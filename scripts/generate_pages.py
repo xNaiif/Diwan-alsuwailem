@@ -301,8 +301,14 @@ def build_poem_page(item, all_poems, responses_map):
     is_chain = poem.get("role") in ("رد", "مجاراة") and (poem.get("mujarat") or {}).get("respondingToId")
     original = find_poem(all_poems, poem["mujarat"]["respondingToId"]) if is_chain else None
 
+    # لو هذي القصيدة نفسها رد/مجاراة، نجيب كل إخوتها (القصائد الثانية اللي ردّت/جارت على نفس الأصل)
+    # بدل الاكتفاء بردود هذي القصيدة نفسها فقط — عشان قصيدة عندها أكثر من رد/مجاراة تظهر كلها بكل صفحة من صفحاتها
+    sibling_source_id = original["poem"]["id"] if (is_chain and original) else poem["id"]
+    resp_ids = [rid for rid in responses_map.get(sibling_source_id, []) if rid != poem["id"]]
+    if is_chain:
+        resp_ids += [rid for rid in responses_map.get(poem["id"], []) if rid not in resp_ids]
+
     responses_html = ""
-    resp_ids = responses_map.get(poem["id"], [])
     if resp_ids:
         links = []
         for rid in resp_ids:
@@ -313,9 +319,10 @@ def build_poem_page(item, all_poems, responses_map):
                 f'<a class="mujarat-goto" href="/poems/{esc(r["poem"]["id"])}.html">'
                 f'{esc(r["poet"]["name"])} — {esc(r["poem"]["title"])}</a>'
             )
+        label = "ردود ومجاراات أخرى على نفس القصيدة الأصلية" if is_chain else "ردود ومجاراات على هذه القصيدة"
         responses_html = (
             '<div class="mujarat-section" style="margin-top:24px">'
-            '<span class="mujarat-label">ردود ومجاراات على هذه القصيدة</span>'
+            f'<span class="mujarat-label">{label}</span>'
             f'<div class="mujarat-responses">{"".join(links)}</div></div>'
         )
 
