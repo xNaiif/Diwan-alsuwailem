@@ -79,10 +79,11 @@ def render_verses(verses):
 
 SITE_CSP = (
     "default-src 'self'; img-src 'self' data:; "
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-    "font-src https://fonts.gstatic.com; script-src 'self'; connect-src 'self'; "
+    "style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self'; connect-src 'self'; "
     "base-uri 'self'; form-action 'self'"
 )
+
+HERO_TITLE = "آل السويلـم"  # كشيدة واحدة بين آخر حرفين، فقط بهذا العنصر الثابت المتكرر بكل صفحة
 
 
 def organization_dict():
@@ -179,9 +180,6 @@ def page_shell(title, description, canonical_url, body_html, json_ld="", robots=
 <meta name="theme-color" content="#15110d" />
 <meta http-equiv="Content-Security-Policy" content="{SITE_CSP}" />
 
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="/css/style.css" />
 {json_ld}
 </head>
@@ -191,7 +189,7 @@ def page_shell(title, description, canonical_url, body_html, json_ld="", robots=
   <div class="hero-inner">
     <a href="/" style="text-decoration:none">
       <p class="hero-eyebrow">ديوان أسرة</p>
-      <p class="hero-title" style="font-size:clamp(1.8rem,6vw,2.6rem)">آل السويلم</p>
+      <p class="hero-title" style="font-size:clamp(1.8rem,6vw,2.6rem)">{HERO_TITLE}</p>
     </a>
   </div>
 </header>

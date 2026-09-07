@@ -239,8 +239,9 @@ async function exportSelectedVersesAsImage() {
 
     await drawBlurredBackground(ctx, size);
     try {
-      await document.fonts.load('700 48px Amiri');
-      await document.fonts.load('600 28px "IBM Plex Sans Arabic"');
+      await document.fonts.load('500 48px "Thmanyah Serif Text"');
+      await document.fonts.load('700 28px "Thmanyah Sans"');
+      await document.fonts.load('500 26px "Thmanyah Sans"');
     } catch { /* الخط الاحتياطي بالمتصفح يكفي لو تعذّر */ }
 
     ctx.direction = "rtl";
@@ -248,7 +249,7 @@ async function exportSelectedVersesAsImage() {
     ctx.textBaseline = "middle";
 
     ctx.fillStyle = "#c9a227";
-    ctx.font = '600 30px "IBM Plex Sans Arabic", sans-serif';
+    ctx.font = '700 30px "Thmanyah Sans", sans-serif';
     ctx.fillText("ديوان آل السويلم", size / 2, 90);
 
     ctx.strokeStyle = "rgba(201,162,39,.5)";
@@ -260,7 +261,7 @@ async function exportSelectedVersesAsImage() {
 
     ctx.fillStyle = "#ede3d3";
     const verseFontSize = verses.length > 1 ? 46 : 54;
-    ctx.font = `700 ${verseFontSize}px Amiri, serif`;
+    ctx.font = `500 ${verseFontSize}px "Thmanyah Serif Text", serif`;
     const maxTextWidth = size - 160;
     const lineHeight = verseFontSize * 1.55;
 
@@ -279,11 +280,11 @@ async function exportSelectedVersesAsImage() {
     });
 
     ctx.fillStyle = "rgba(237,227,211,.75)";
-    ctx.font = '600 26px "IBM Plex Sans Arabic", sans-serif';
+    ctx.font = '500 26px "Thmanyah Sans", sans-serif';
     ctx.fillText(poetName, size / 2, size - 110);
     if (poemTitle) {
       ctx.fillStyle = "rgba(201,162,39,.85)";
-      ctx.font = '400 22px "IBM Plex Sans Arabic", sans-serif';
+      ctx.font = '400 22px "Thmanyah Sans", sans-serif';
       ctx.fillText(poemTitle, size / 2, size - 72);
     }
 
