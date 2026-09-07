@@ -160,6 +160,7 @@ def page_shell(title, description, canonical_url, body_html, json_ld="", robots=
 <meta name="description" content="{esc(description)}" />
 <meta name="robots" content="{esc(robots)}" />
 <link rel="canonical" href="{esc(canonical_url)}" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
 <link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png" />
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
