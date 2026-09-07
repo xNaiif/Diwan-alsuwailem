@@ -42,9 +42,8 @@ summary::before{content:"⚙️ ";margin-left:4px}
 .status-box{padding:12px;border-radius:8px;margin-top:10px;font-size:.85rem;display:none}
 .status-ok{background:rgba(111,154,120,.15);border:1px solid var(--sage);color:var(--sage)}
 .status-err{background:rgba(217,128,63,.15);border:1px solid var(--ember);color:var(--ember)}
-.site-credit{margin:24px 0 4px;text-align:left;direction:ltr;font-size:.72rem;letter-spacing:.02em;color:var(--text-faint);opacity:.7}
-.site-credit b{font-weight:600;color:var(--text-muted);display:inline-flex;align-items:center}
-.site-credit img{height:1.15em;width:auto;display:inline-block;margin:0 .05em;vertical-align:middle}
+.site-credit{margin:24px 0 4px;padding-left:58px;text-align:left;direction:ltr;font-size:.72rem;letter-spacing:.02em;color:var(--text-faint);opacity:.7}
+.site-credit .naif-mark{height:1.05em;width:auto;display:inline-block;vertical-align:middle;margin-inline-start:.15em}
 .status-info{background:rgba(201,162,39,.1);border:1px solid var(--gold);color:var(--gold)}
 .dropzone{border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;margin-top:10px;transition:border-color .15s}
 .dropzone:hover,.dropzone.drag{border-color:var(--gold)}
@@ -159,7 +158,7 @@ summary::before{content:"⚙️ ";margin-left:4px}
 
 <div id="run-status" class="status-box"></div>
 
-<p class="site-credit">by <b>N<img src="/assets/ai-mark.png" alt="ai" width="19" height="14" loading="lazy" decoding="async"/>f</b></p>
+<p class="site-credit">by <img class="naif-mark" src="/assets/naif-mark.png" alt="Naif" width="150" height="40" loading="lazy" decoding="async"/></p>
 
 <script src="js/vendor/pdf.min.js"></script>
 <script>
