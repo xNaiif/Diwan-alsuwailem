@@ -81,6 +81,7 @@ async function init() {
   window.addEventListener("hashchange", handleRoute);
   initBackToTop();
   initCompactFilterBar();
+  initVerseExport();
 }
 
 /* شريط الفلاتر يصغّر تلقائياً وأنت تنزل بالصفحة — كل الأزرار تضل ظاهرة وقابلة للضغط، بدون أي إخفاء أو ضغطة إضافية */
@@ -117,6 +118,190 @@ function initBackToTop() {
     btn.style.pointerEvents = show ? "auto" : "none";
     btn.style.transform = show ? "translateY(0)" : "translateY(12px)";
   });
+}
+
+/* ====================================================
+   تصدير بيت أو بيتين كصورة قابلة للمشاركة
+   ==================================================== */
+const verseSelection = { els: [] };
+
+function toggleVerseSelect(el) {
+  const idx = verseSelection.els.indexOf(el);
+  if (idx !== -1) {
+    verseSelection.els.splice(idx, 1);
+    el.classList.remove("selected");
+  } else {
+    // لو المحدد حالياً من قصيدة ثانية، ابدأ تحديد جديد
+    if (verseSelection.els.length && verseSelection.els[0].dataset.poemTitle !== el.dataset.poemTitle) {
+      verseSelection.els.forEach(e => e.classList.remove("selected"));
+      verseSelection.els = [];
+    }
+    if (verseSelection.els.length >= 2) return; // الحد الأقصى بيتين بالصورة الواحدة
+    verseSelection.els.push(el);
+    el.classList.add("selected");
+  }
+  updateVerseExportButton();
+}
+
+function resetVerseSelection() {
+  verseSelection.els.forEach(e => e.classList.remove("selected"));
+  verseSelection.els = [];
+  updateVerseExportButton();
+}
+
+function updateVerseExportButton() {
+  const btn = document.getElementById("verse-export-btn");
+  if (!btn) return;
+  const show = verseSelection.els.length > 0;
+  btn.style.opacity = show ? "1" : "0";
+  btn.style.pointerEvents = show ? "auto" : "none";
+  btn.style.transform = show ? "translateY(0)" : "translateY(12px)";
+}
+
+/* زر عائم يظهر بس وأنت محدد بيت أو بيتين — نفس أسلوب back-to-top (تنسيق مضمّن). */
+function initVerseExport() {
+  const btn = document.createElement("button");
+  btn.id = "verse-export-btn";
+  btn.setAttribute("aria-label", "تحميل الأبيات المحددة كصورة");
+  btn.innerHTML = "🖼️ حمّل كصورة";
+  btn.style.cssText = [
+    "position:fixed", "bottom:22px", "right:22px", "z-index:9999",
+    "padding:12px 20px", "border-radius:999px",
+    "background:var(--gold,#c9a227)", "color:#1a120b", "border:none",
+    "font-size:.92rem", "font-weight:600", "font-family:inherit", "cursor:pointer",
+    "opacity:0", "pointer-events:none", "transform:translateY(12px)",
+    "transition:opacity .25s ease,transform .25s ease",
+    "box-shadow:0 4px 16px rgba(0,0,0,.4)"
+  ].join(";");
+  btn.addEventListener("click", exportSelectedVersesAsImage);
+  document.body.appendChild(btn);
+}
+
+function wrapCanvasText(ctx, text, maxWidth) {
+  const words = String(text || "").split(" ").filter(Boolean);
+  if (words.length === 0) return [""];
+  const lines = [];
+  let current = words[0];
+  for (let i = 1; i < words.length; i++) {
+    const test = current + " " + words[i];
+    if (ctx.measureText(test).width <= maxWidth) current = test;
+    else { lines.push(current); current = words[i]; }
+  }
+  lines.push(current);
+  return lines;
+}
+
+/* خلفية الصورة: صورة الديوان (og-image) مموّهة ومعتّمة — لو تعذّر تحميلها لأي سبب
+   (مثلاً تصفّح offline) نرجع لتدرّج بسيط بنفس هوية الموقع بدل ما توقف العملية كلها. */
+function drawBlurredBackground(ctx, size) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      ctx.fillStyle = "#15110d";
+      ctx.fillRect(0, 0, size, size);
+      ctx.save();
+      ctx.filter = "blur(18px) brightness(0.55)";
+      const scale = Math.max(size / img.width, size / img.height) * 1.15;
+      const w = img.width * scale, h = img.height * scale;
+      ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+      ctx.restore();
+      ctx.fillStyle = "rgba(21,17,13,.42)";
+      ctx.fillRect(0, 0, size, size);
+      resolve();
+    };
+    img.onerror = () => {
+      const grad = ctx.createRadialGradient(size / 2, size * 0.15, 40, size / 2, size / 2, size * 0.8);
+      grad.addColorStop(0, "#3a2416");
+      grad.addColorStop(1, "#15110d");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, size, size);
+      resolve();
+    };
+    img.src = "/assets/og-image.jpg";
+  });
+}
+
+async function exportSelectedVersesAsImage() {
+  if (verseSelection.els.length === 0) return;
+  const verses = verseSelection.els.map(el => ({ sadr: el.dataset.sadr, ajz: el.dataset.ajz }));
+  const poetName = verseSelection.els[0].dataset.poetName || "";
+  const poemTitle = verseSelection.els[0].dataset.poemTitle || "";
+
+  const btn = document.getElementById("verse-export-btn");
+  const originalLabel = btn ? btn.innerHTML : "";
+  if (btn) { btn.innerHTML = "⏳ جاري التجهيز…"; btn.style.pointerEvents = "none"; }
+
+  try {
+    const size = 1080;
+    const canvas = document.createElement("canvas");
+    canvas.width = size; canvas.height = size;
+    const ctx = canvas.getContext("2d");
+
+    await drawBlurredBackground(ctx, size);
+    try {
+      await document.fonts.load('700 48px Amiri');
+      await document.fonts.load('600 28px "IBM Plex Sans Arabic"');
+    } catch { /* الخط الاحتياطي بالمتصفح يكفي لو تعذّر */ }
+
+    ctx.direction = "rtl";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    ctx.fillStyle = "#c9a227";
+    ctx.font = '600 30px "IBM Plex Sans Arabic", sans-serif';
+    ctx.fillText("ديوان آل السويلم", size / 2, 90);
+
+    ctx.strokeStyle = "rgba(201,162,39,.5)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(size / 2 - 40, 130);
+    ctx.lineTo(size / 2 + 40, 130);
+    ctx.stroke();
+
+    ctx.fillStyle = "#ede3d3";
+    const verseFontSize = verses.length > 1 ? 46 : 54;
+    ctx.font = `700 ${verseFontSize}px Amiri, serif`;
+    const maxTextWidth = size - 160;
+    const lineHeight = verseFontSize * 1.55;
+
+    const allLines = [];
+    verses.forEach((v, i) => {
+      allLines.push(...wrapCanvasText(ctx, v.sadr, maxTextWidth));
+      allLines.push(...wrapCanvasText(ctx, v.ajz, maxTextWidth));
+      if (i < verses.length - 1) allLines.push("");
+    });
+
+    const totalHeight = allLines.length * lineHeight;
+    let y = size / 2 - totalHeight / 2 + lineHeight / 2;
+    allLines.forEach(line => {
+      if (line) ctx.fillText(line, size / 2, y);
+      y += lineHeight;
+    });
+
+    ctx.fillStyle = "rgba(237,227,211,.75)";
+    ctx.font = '600 26px "IBM Plex Sans Arabic", sans-serif';
+    ctx.fillText(poetName, size / 2, size - 110);
+    if (poemTitle) {
+      ctx.fillStyle = "rgba(201,162,39,.85)";
+      ctx.font = '400 22px "IBM Plex Sans Arabic", sans-serif';
+      ctx.fillText(poemTitle, size / 2, size - 72);
+    }
+
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const safeName = (poemTitle || "بيت-من-قصيدة").replace(/[\\/:*?"<>|]/g, "").trim().slice(0, 60) || "بيت-من-قصيدة";
+    a.href = url;
+    a.download = `${safeName}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  } catch (err) {
+    alert("تعذّر إنشاء الصورة: " + err.message);
+  } finally {
+    if (btn) { btn.innerHTML = originalLabel; btn.style.pointerEvents = ""; updateVerseExportButton(); }
+  }
 }
 
 function getAllPoemsFlat() {
@@ -170,6 +355,11 @@ function renderFilterPills() {
 
 function bindGlobalEvents() {
   document.addEventListener("click", (e) => {
+    const verseEl = e.target.closest(".verse-selectable");
+    if (verseEl) {
+      toggleVerseSelect(verseEl);
+      return;
+    }
     const mujaratBtn = e.target.closest(".mujarat-goto");
     if (mujaratBtn) {
       location.hash = `poem=${mujaratBtn.dataset.poemId}`;
@@ -184,6 +374,13 @@ function bindGlobalEvents() {
     const back = e.target.closest(".back-btn");
     if (back) location.hash = back.dataset.returnTo ? `poet=${back.dataset.returnTo}` : "";
   });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const card = e.target.closest('[role="button"][data-poem]');
+    if (!card) return;
+    e.preventDefault();
+    location.hash = `poem=${card.dataset.poem}`;
+  });
   el.searchInput.addEventListener("input", (e) => {
     state.query = e.target.value.trim();
     if (location.hash.startsWith("#poem=")) location.hash = "";
@@ -192,6 +389,7 @@ function bindGlobalEvents() {
 }
 
 function handleRoute() {
+  resetVerseSelection();
   const hash = decodeURIComponent(location.hash.replace(/^#/, ""));
   const [key, value] = hash.split("=");
   if (key === "poem" && value) { showPoem(value); return; }
@@ -230,15 +428,16 @@ function renderGridView() {
     });
   }
 
+  const poemOfDay = renderPoemOfDay();
   const recentSection = renderRecentSection();
   const bioBanner = renderBioBanner();
   if (items.length === 0) {
-    el.poemsGrid.innerHTML = recentSection + bioBanner + `<div class="empty-state">لا توجد قصائد مطابقة لبحثك حتى الآن.</div>`;
+    el.poemsGrid.innerHTML = poemOfDay + recentSection + bioBanner + `<div class="empty-state">لا توجد قصائد مطابقة لبحثك حتى الآن.</div>`;
     return;
   }
 
   const cards = items.map(({ poet, poem }) => buildPoemCard(poet, poem)).join("");
-  el.poemsGrid.innerHTML = recentSection + bioBanner + cards;
+  el.poemsGrid.innerHTML = poemOfDay + recentSection + bioBanner + cards;
 }
 
 function buildPoemCard(poet, poem) {
@@ -252,6 +451,36 @@ function buildPoemCard(poet, poem) {
       <h3>${esc(poem.title)}</h3>
       <p>${poem.verses?.[0] ? esc(poem.verses[0].sadr) : ""}</p>
     </article>`;
+}
+
+/* قصيدة اليوم — اختيار عشوائي (لكن ثابت لنفس اليوم لكل الزوار) من كل قصائد الديوان
+   بما فيها قصائد الشعراء الخارجيين. اليوم يتغيّر عند الساعة ١٢:٠٠ ظهراً بتوقيت السعودية
+   (UTC+3) بدل منتصف الليل — عشان "يوم القصيدة" يبدأ مع بداية النهار الفعلي. */
+function dailyHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  return h;
+}
+function riyadhDayKey() {
+  // UTC+3 (توقيت السعودية) ناقص ١٢ ساعة (نقطة التحول) = إزاحة صافية -٩ ساعات عن UTC
+  const shifted = new Date(Date.now() - 9 * 3600 * 1000);
+  return shifted.toISOString().slice(0, 10);
+}
+function renderPoemOfDay() {
+  if (state.activePoet !== "all" || state.query) return "";
+  const all = getAllPoemsFlat();
+  if (all.length === 0) return "";
+  const idx = dailyHash(riyadhDayKey()) % all.length;
+  const { poet, poem } = all[idx];
+  const versesHtml = (poem.verses || []).slice(0, 2).map(v =>
+    `<div class="verse"><span class="sadr">${esc(v.sadr)}</span><span class="divider"></span><span class="ajz">${esc(v.ajz)}</span></div>`
+  ).join("");
+  return `<div class="poem-of-day" data-poem="${esc(poem.id)}" tabindex="0" role="button" aria-label="اقرأ قصيدة اليوم كاملة">
+    <div class="poem-of-day-badge">✨ قصيدة اليوم</div>
+    <div class="poem-of-day-tag">${poetMark(poet, "width:18px;height:18px;")} ${esc(poet.name)}</div>
+    <h3>${esc(poem.title)}</h3>
+    ${versesHtml ? `<div class="verses poem-of-day-verses">${versesHtml}</div>` : ""}
+  </div>`;
 }
 
 /* قصائد أُضيفت حديثاً — تظهر بس بعرض "الكل" بدون بحث، وبس لو فيه قصائد عندها تاريخ إضافة حقيقي.
@@ -318,20 +547,28 @@ function showPoem(poemId) {
   }
 }
 
-function buildVerses(verses) {
-  return (verses || []).map(v => `
-    <div class="verse">
+/* exportCtx = {poet, title} يفعّل إمكانية تحديد البيت لتصديره كصورة — يُمرَّر فقط لأبيات
+   القصيدة المعروضة حالياً (مو لوحة القصيدة الأصلية بعرض الرد/المجاراة، لأنها أصلاً قابلة
+   للضغط للانتقال لصفحتها، وتحديد بيت فيها بيتعارض مع فتحها). */
+function buildVerses(verses, exportCtx) {
+  return (verses || []).map(v => {
+    if (!exportCtx) {
+      return `<div class="verse"><span class="sadr">${esc(v.sadr)}</span><span class="divider"></span><span class="ajz">${esc(v.ajz)}</span></div>`;
+    }
+    return `<div class="verse verse-selectable" data-sadr="${esc(v.sadr)}" data-ajz="${esc(v.ajz)}" data-poet-name="${esc(exportCtx.poet)}" data-poem-title="${esc(exportCtx.title)}">
+      <span class="verse-check" aria-hidden="true"></span>
       <span class="sadr">${esc(v.sadr)}</span>
       <span class="divider"></span>
       <span class="ajz">${esc(v.ajz)}</span>
-    </div>`).join("");
+    </div>`;
+  }).join("");
 }
 
 function buildChainView(backBtn, origFound, resp, responsesSection) {
   const { poet: origPoet, poem: origPoem, isExternal: origIsExternal } = origFound;
   const { poet: respPoet, poem: respPoem } = resp;
   const origVerses = buildVerses(origPoem.verses);
-  const respVerses = buildVerses(respPoem.verses);
+  const respVerses = buildVerses(respPoem.verses, { poet: respPoet.name, title: respPoem.title });
 
   return `
     ${backBtn}
@@ -367,7 +604,7 @@ function buildChainView(backBtn, origFound, resp, responsesSection) {
 }
 
 function buildNormalView(backBtn, poet, poem, isExternal, responsesSection) {
-  const versesHtml = buildVerses(poem.verses);
+  const versesHtml = buildVerses(poem.verses, { poet: poet.name, title: poem.title });
   return `
     ${backBtn}
     <div class="poem-header">
