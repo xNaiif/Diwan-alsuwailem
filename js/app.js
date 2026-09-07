@@ -191,34 +191,21 @@ function wrapCanvasText(ctx, text, maxWidth) {
   return lines;
 }
 
-/* خلفية الصورة: صورة الديوان (og-image) مموّهة ومعتّمة — لو تعذّر تحميلها لأي سبب
-   (مثلاً تصفّح offline) نرجع لتدرّج بسيط بنفس هوية الموقع بدل ما توقف العملية كلها. */
-function drawBlurredBackground(ctx, size) {
-  return new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => {
-      ctx.fillStyle = "#15110d";
-      ctx.fillRect(0, 0, size, size);
-      ctx.save();
-      ctx.filter = "blur(18px) brightness(0.55)";
-      const scale = Math.max(size / img.width, size / img.height) * 1.15;
-      const w = img.width * scale, h = img.height * scale;
-      ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
-      ctx.restore();
-      ctx.fillStyle = "rgba(21,17,13,.42)";
-      ctx.fillRect(0, 0, size, size);
-      resolve();
-    };
-    img.onerror = () => {
-      const grad = ctx.createRadialGradient(size / 2, size * 0.15, 40, size / 2, size / 2, size * 0.8);
-      grad.addColorStop(0, "#3a2416");
-      grad.addColorStop(1, "#15110d");
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, size, size);
-      resolve();
-    };
-    img.src = "/assets/og-image.jpg";
-  });
+/* خلفية بسيطة بتدرّج هادئ بنفس هوية الموقع (زي توهج ember-glow) — بدون أي صورة أو
+   نص إضافي عليها، عشان البيت المُصدَّر يبقى واضح تماماً بدون أي تداخل بصري. */
+function drawGradientBackground(ctx, size) {
+  ctx.fillStyle = "#15110d";
+  ctx.fillRect(0, 0, size, size);
+  const glow = ctx.createRadialGradient(size * 0.5, size * 0.08, 10, size * 0.5, size * 0.4, size * 0.75);
+  glow.addColorStop(0, "rgba(217,128,63,.16)");
+  glow.addColorStop(1, "rgba(217,128,63,0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, size, size);
+  const glow2 = ctx.createRadialGradient(size * 0.85, size * 0.28, 10, size * 0.85, size * 0.28, size * 0.5);
+  glow2.addColorStop(0, "rgba(201,162,39,.08)");
+  glow2.addColorStop(1, "rgba(201,162,39,0)");
+  ctx.fillStyle = glow2;
+  ctx.fillRect(0, 0, size, size);
 }
 
 async function exportSelectedVersesAsImage() {
@@ -237,29 +224,31 @@ async function exportSelectedVersesAsImage() {
     canvas.width = size; canvas.height = size;
     const ctx = canvas.getContext("2d");
 
-    await drawBlurredBackground(ctx, size);
+    drawGradientBackground(ctx, size);
     try {
+      await document.fonts.load('700 56px "Thmanyah Serif Display"');
       await document.fonts.load('500 48px "Thmanyah Serif Text"');
-      await document.fonts.load('700 28px "Thmanyah Sans"');
       await document.fonts.load('500 26px "Thmanyah Sans"');
+      await document.fonts.load('700 30px "Thmanyah Sans"');
     } catch { /* الخط الاحتياطي بالمتصفح يكفي لو تعذّر */ }
 
     ctx.direction = "rtl";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    ctx.fillStyle = "#c9a227";
-    ctx.font = '700 30px "Thmanyah Sans", sans-serif';
-    ctx.fillText("ديوان آل السويلم", size / 2, 90);
+    // شعار الديوان أعلى الصورة — بخط ثمانية Serif Display بنفس معالجة عنوان الموقع
+    ctx.fillStyle = "#ede3d3";
+    ctx.font = '700 58px "Thmanyah Serif Display", serif';
+    ctx.fillText("آل السويلـم", size / 2, 110);
 
     ctx.strokeStyle = "rgba(201,162,39,.5)";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(size / 2 - 40, 130);
-    ctx.lineTo(size / 2 + 40, 130);
+    ctx.moveTo(size / 2 - 40, 168);
+    ctx.lineTo(size / 2 + 40, 168);
     ctx.stroke();
 
-    ctx.fillStyle = "#ede3d3";
+    ctx.fillStyle = "#f2ead9";
     const verseFontSize = verses.length > 1 ? 46 : 54;
     ctx.font = `500 ${verseFontSize}px "Thmanyah Serif Text", serif`;
     const maxTextWidth = size - 160;
@@ -272,21 +261,28 @@ async function exportSelectedVersesAsImage() {
       if (i < verses.length - 1) allLines.push("");
     });
 
+    const middleY = 168 + (size - 168 - 150) / 2 + 40;
     const totalHeight = allLines.length * lineHeight;
-    let y = size / 2 - totalHeight / 2 + lineHeight / 2;
+    let y = middleY - totalHeight / 2 + lineHeight / 2;
     allLines.forEach(line => {
       if (line) ctx.fillText(line, size / 2, y);
       y += lineHeight;
     });
 
-    ctx.fillStyle = "rgba(237,227,211,.75)";
+    ctx.fillStyle = "rgba(237,227,211,.8)";
     ctx.font = '500 26px "Thmanyah Sans", sans-serif';
-    ctx.fillText(poetName, size / 2, size - 110);
-    if (poemTitle) {
-      ctx.fillStyle = "rgba(201,162,39,.85)";
-      ctx.font = '400 22px "Thmanyah Sans", sans-serif';
-      ctx.fillText(poemTitle, size / 2, size - 72);
-    }
+    ctx.fillText(poetName, size / 2, size - 150);
+
+    ctx.strokeStyle = "rgba(201,162,39,.3)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(size / 2 - 200, size - 108);
+    ctx.lineTo(size / 2 + 200, size - 108);
+    ctx.stroke();
+
+    ctx.fillStyle = "#c9a227";
+    ctx.font = '700 30px "Thmanyah Sans", sans-serif';
+    ctx.fillText("diwan-alswilem.com", size / 2, size - 66);
 
     const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
     const url = URL.createObjectURL(blob);
