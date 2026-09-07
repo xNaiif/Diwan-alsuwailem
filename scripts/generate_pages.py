@@ -229,13 +229,23 @@ def poem_json_ld(poet, poem, canonical_url, is_external):
     return ld_scripts(creative_work, breadcrumb)
 
 
+BIO_PLACEHOLDER = "قيد الإضافة"
+
+
+def real_bio(poet):
+    """نبذة الشاعر الفعلية، أو None لو لسا مؤقتة (قيد الإضافة) — عشان
+    ما نعرض هذا النص المؤقت كوصف SEO/JSON-LD، بس يبقى ظاهر بالصفحة نفسها."""
+    bio = poet.get("bio")
+    return bio if bio and bio != BIO_PLACEHOLDER else None
+
+
 def poet_json_ld(poet, canonical_url):
     data = {
         "@context": "https://schema.org",
         "@type": "Person",
         "name": poet.get("name"),
         "url": canonical_url,
-        "description": poet.get("bio") or None,
+        "description": real_bio(poet),
         "image": f"{SITE_URL}{poet['photo']}" if poet.get("photo") else None,
     }
     data = {k: v for k, v in data.items() if v is not None}
@@ -354,7 +364,7 @@ def build_poem_page(item, all_poems, responses_map):
 def build_poet_page(poet):
     canonical = f"{SITE_URL}/poets/{poet['id']}.html"
     title = f'قصائد {poet["name"]} | {SITE_NAME}'
-    description = poet.get("bio") or f'كل قصائد {poet["name"]} في {SITE_NAME}'
+    description = real_bio(poet) or f'كل قصائد {poet["name"]} في {SITE_NAME}'
     breadcrumb_nav = breadcrumb_html(poet_breadcrumb_items(poet, canonical))
 
     cards = []
