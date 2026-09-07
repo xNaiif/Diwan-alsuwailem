@@ -162,7 +162,10 @@ function renderFilterPills() {
       ${esc(poet.name)}
     </button>`
   ).join("");
-  el.filterPills.innerHTML = `<button class="pill active" data-poet="all">الكل</button>${poetPills}`;
+  const respondentsPill = (state.data.externalPoets || []).length
+    ? `<a class="pill" href="/respondents.html">شعراء تجاوبوا مع الديوان</a>`
+    : "";
+  el.filterPills.innerHTML = `<button class="pill active" data-poet="all">الكل</button>${poetPills}${respondentsPill}`;
 }
 
 function bindGlobalEvents() {
