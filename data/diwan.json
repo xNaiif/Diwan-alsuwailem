@@ -2,7 +2,7 @@
   "site": {
     "title": "آل السويلم",
     "eyebrow": "ديوان أسرة",
-    "subtitle": "ديوان يجمع قصائد الشعراء  من آل سويلم",
+    "subtitle": "ديوان يجمع قصائد وشعراء آل السويلم في مكان واحد.",
     "footerNote": "",
     "repo": "xNaiif/Diwan-alsuwailem",
     "dataPath": "data/diwan.json"
