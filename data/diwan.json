@@ -6157,8 +6157,8 @@
           ],
           "mujarat": {
             "respondingToPoet": "تراحيب بن سويلم العتيبي",
-            "respondingToTitle": "يالله يا معبود يا خير مطلوب",
-            "respondingToId": "poet-1-poem-42"
+            "respondingToTitle": "يالله يامعبود ياخير مطلوب",
+            "respondingToId": "poet-1-poem-40"
           },
           "id": "poet-2-poem-42"
         },
@@ -8180,7 +8180,7 @@
         },
         {
           "title": "ضيف الله اسند لي تماثيل وعجوب",
-          "role": "",
+          "role": "مجاراة",
           "meter": "",
           "date": "",
           "source": "من مجموعة قصائد ضيف الله بن سويلم",
@@ -8235,7 +8235,12 @@
             }
           ],
           "addedAt": "2026-09-07",
-          "id": "poet-3-poem-12"
+          "id": "poet-3-poem-12",
+          "mujarat": {
+            "respondingToPoet": "تراحيب بن سويلم العتيبي",
+            "respondingToTitle": "يالله يامعبود ياخير مطلوب",
+            "respondingToId": "poet-1-poem-40"
+          }
         }
       ]
     },
