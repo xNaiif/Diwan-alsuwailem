@@ -130,8 +130,8 @@ main{position:relative;z-index:1;max-width:var(--container);margin:0 auto;paddin
 .site-footer .footer-note{display:block;margin-top:6px;color:var(--text-faint);opacity:.8}
 .site-credit{margin:16px 0 0;text-align:left;direction:ltr;font-size:.72rem;letter-spacing:.02em;color:var(--text-faint);opacity:.7;transition:opacity .2s ease}
 .site-credit:hover{opacity:1}
-.site-credit b{font-weight:600;color:var(--text-muted)}
-.site-credit .ai{font-weight:700;background:linear-gradient(135deg,var(--gold),var(--ember));-webkit-background-clip:text;background-clip:text;color:transparent}
+.site-credit b{font-weight:600;color:var(--text-muted);display:inline-flex;align-items:center}
+.site-credit img{height:1.15em;width:auto;display:inline-block;margin:0 .05em;vertical-align:middle}
 
 /* ---------- سلسلة القصائد (بدع + رد في صفحة واحدة) ---------- */
 .poem-chain {

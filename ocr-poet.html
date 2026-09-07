@@ -43,8 +43,8 @@ summary::before{content:"⚙️ ";margin-left:4px}
 .status-ok{background:rgba(111,154,120,.15);border:1px solid var(--sage);color:var(--sage)}
 .status-err{background:rgba(217,128,63,.15);border:1px solid var(--ember);color:var(--ember)}
 .site-credit{margin:24px 0 4px;text-align:left;direction:ltr;font-size:.72rem;letter-spacing:.02em;color:var(--text-faint);opacity:.7}
-.site-credit b{font-weight:600;color:var(--text-muted)}
-.site-credit .ai{font-weight:700;background:linear-gradient(135deg,var(--gold),var(--ember));-webkit-background-clip:text;background-clip:text;color:transparent}
+.site-credit b{font-weight:600;color:var(--text-muted);display:inline-flex;align-items:center}
+.site-credit img{height:1.15em;width:auto;display:inline-block;margin:0 .05em;vertical-align:middle}
 .status-info{background:rgba(201,162,39,.1);border:1px solid var(--gold);color:var(--gold)}
 .dropzone{border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;margin-top:10px;transition:border-color .15s}
 .dropzone:hover,.dropzone.drag{border-color:var(--gold)}
@@ -159,7 +159,7 @@ summary::before{content:"⚙️ ";margin-left:4px}
 
 <div id="run-status" class="status-box"></div>
 
-<p class="site-credit">by <b>N<span class="ai">ai</span>f</b></p>
+<p class="site-credit">by <b>N<img src="/assets/ai-mark.png" alt="ai" loading="lazy" decoding="async"/>f</b></p>
 
 <script src="js/vendor/pdf.min.js"></script>
 <script>

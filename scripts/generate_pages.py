@@ -201,7 +201,7 @@ def page_shell(title, description, canonical_url, body_html, json_ld="", robots=
   <p>{SITE_NAME} — © {esc(str(datetime.date.today().year))}
     <span class="footer-note">هذه صفحة ثابتة لتسهيل الوصول والفهرسة — <a href="/" style="color:var(--gold)">تصفّح الديوان كامل من هنا</a></span>
   </p>
-  <p class="site-credit">by <b>N<span class="ai">ai</span>f</b></p>
+  <p class="site-credit">by <b>N<img src="/assets/ai-mark.png" alt="ai" loading="lazy" decoding="async" />f</b></p>
 </footer>
 </body>
 </html>"""
