@@ -367,7 +367,14 @@ function bindGlobalEvents() {
       location.hash = pill.dataset.poet === "all" ? "" : `poet=${pill.dataset.poet}`;
     }
     const card = e.target.closest("[data-poem]");
-    if (card) location.hash = `poem=${card.dataset.poem}`;
+    if (card) {
+      // بطاقات القصائد صارت روابط <a href> حقيقية (قابلة للزحف وفتح بتبويب جديد) —
+      // نفتحها بنفس السرعة القديمة (بدون تحميل كامل للصفحة) فقط عند نقرة أساسية عادية،
+      // ونترك المتصفح يتصرف بشكل طبيعي مع ctrl/cmd/shift/النقرة الوسطى (فتح بتبويب/نافذة جديدة)
+      if (card.tagName === "A" && (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1)) return;
+      if (card.tagName === "A") e.preventDefault();
+      location.hash = `poem=${card.dataset.poem}`;
+    }
     const back = e.target.closest(".back-btn");
     if (back) location.hash = back.dataset.returnTo ? `poet=${back.dataset.returnTo}` : "";
   });
@@ -439,7 +446,7 @@ function renderGridView() {
 
 function buildPoemCard(poet, poem) {
   const hasResponses = !!state.responsesMap[poem.id];
-  return `<article class="poem-card" data-poem="${esc(poem.id)}" tabindex="0" role="button">
+  return `<a class="poem-card" href="/poems/${esc(poem.id)}.html" data-poem="${esc(poem.id)}">
       <div class="poem-card-tag">
         ${poetMark(poet, "width:14px;height:14px;")} ${esc(poet.name)}
         ${roleBadge(poem.role)}
@@ -447,7 +454,7 @@ function buildPoemCard(poet, poem) {
       </div>
       <h3>${esc(poem.title)}</h3>
       <p>${poem.verses?.[0] ? esc(poem.verses[0].sadr) : ""}</p>
-    </article>`;
+    </a>`;
 }
 
 /* قصيدة اليوم — اختيار عشوائي (لكن ثابت لنفس اليوم لكل الزوار) من كل قصائد الديوان
@@ -472,12 +479,12 @@ function renderPoemOfDay() {
   const versesHtml = (poem.verses || []).slice(0, 2).map(v =>
     `<div class="verse"><span class="sadr">${esc(v.sadr)}</span><span class="divider"></span><span class="ajz">${esc(v.ajz)}</span></div>`
   ).join("");
-  return `<div class="poem-of-day" data-poem="${esc(poem.id)}" tabindex="0" role="button" aria-label="اقرأ قصيدة اليوم كاملة">
+  return `<a class="poem-of-day" href="/poems/${esc(poem.id)}.html" data-poem="${esc(poem.id)}" aria-label="اقرأ قصيدة اليوم كاملة">
     <div class="poem-of-day-badge">✨ قصيدة اليوم</div>
     <div class="poem-of-day-tag">${poetMark(poet, "width:18px;height:18px;")} ${esc(poet.name)}</div>
     <h3>${esc(poem.title)}</h3>
     ${versesHtml ? `<div class="verses poem-of-day-verses">${versesHtml}</div>` : ""}
-  </div>`;
+  </a>`;
 }
 
 /* قصائد أُضيفت حديثاً — تظهر بس بعرض "الكل" بدون بحث، وبس لو فيه قصائد عندها تاريخ إضافة حقيقي.
