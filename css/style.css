@@ -247,6 +247,19 @@ main{position:relative;z-index:1;max-width:var(--container);margin:0 auto;paddin
 .respondent-list a{color:var(--text-muted);text-decoration:none;font-size:.9rem;transition:color .2s}
 .respondent-list a:hover{color:var(--ember)}
 
+/* ---------- صفحة "عن الديوان" وأسئلة شائعة ---------- */
+.about-stats{display:flex;flex-wrap:wrap;gap:14px;margin:18px 0}
+.about-stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 20px;text-align:center;flex:1;min-width:120px}
+.about-stat b{display:block;font-size:1.6rem;color:var(--gold);font-family:var(--font-display)}
+.about-stat span{font-size:.8rem;color:var(--text-muted)}
+.faq-list{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.faq-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px}
+.faq-item summary{cursor:pointer;font-weight:600;color:var(--text);list-style:none;font-size:.98rem}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::before{content:"+ ";color:var(--gold)}
+.faq-item[open] summary::before{content:"– "}
+.faq-item p{margin:10px 0 0;color:var(--text-muted);line-height:1.9;font-size:.92rem}
+
 /* ---------- قسم "أضيف حديثاً" ---------- */
 .recent-heading{
   grid-column:1/-1;font-family:var(--font-display);

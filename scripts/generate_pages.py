@@ -18,7 +18,7 @@ from pathlib import Path
 
 SITE_URL = "https://diwan-alswilem.com"
 SITE_NAME = "ديوان آل السويلم"
-CSS_VERSION = "3"  # رفعه عند أي تعديل بـcss/style.css عشان يجبر المتصفحات تحمّل النسخة الجديدة
+CSS_VERSION = "4"  # رفعه عند أي تعديل بـcss/style.css عشان يجبر المتصفحات تحمّل النسخة الجديدة
 ROOT = Path(__file__).resolve().parent.parent  # جذر المستودع
 DATA_PATH = ROOT / "data" / "diwan.json"
 POEMS_DIR = ROOT / "poems"
@@ -226,6 +226,10 @@ def poem_json_ld(poet, poem, canonical_url, is_external, poet_page_url, original
     }
     if poem.get("date"):
         creative_work["dateCreated"] = poem["date"]
+    if poem.get("addedAt"):
+        # تاريخ إضافة القصيدة للديوان فعلياً (مو تاريخ كتابتها) — إشارة حداثة (freshness) حقيقية
+        # لمحركات البحث ومحركات الذكاء الاصطناعي، نضيفها فقط لو موجودة فعلاً (بدون اختلاق تواريخ)
+        creative_work["dateModified"] = poem["addedAt"]
     if verses_text:
         creative_work["text"] = verses_text[:2000]
     if original_url:
@@ -503,6 +507,105 @@ def build_external_poets_page(data):
     return "respondents.html", page_shell(title, description, canonical, body, ld_scripts(breadcrumb))
 
 
+def build_about_page(data):
+    """صفحة تعريفية + أسئلة شائعة عن الديوان — كل الأرقام محسوبة فعلياً من data/diwan.json
+    وقت التوليد (بدون أي رقم مكتوب يدوياً)، عشان تبقى صحيحة تلقائياً مع أي إضافة مستقبلية.
+    محتواها مطابق حرفياً لبيانات FAQPage (Schema.org) عشان تصلح لنتائج البحث الغنية ولمحركات
+    الذكاء الاصطناعي (GEO) اللي تعتمد على مطابقة النص المرئي بالصفحة مع البيانات الوصفية."""
+    canonical = f"{SITE_URL}/about.html"
+    title = f"عن الديوان — أسئلة شائعة | {SITE_NAME}"
+
+    family_count = len(data.get("poets", []))
+    external_count = len(data.get("externalPoets", []))
+    total_poems = sum(len(p.get("poems", [])) for p in data.get("poets", [])) + \
+                  sum(len(p.get("poems", [])) for p in data.get("externalPoets", []))
+    linked_count = sum(
+        1 for item in flat_poems(data) if (item["poem"].get("mujarat") or {}).get("respondingToId")
+    )
+
+    def counted(n, singular, plural):
+        """عدد + معدود بصيغة نحوية صحيحة: جمع مع 3-10، مفرد منصوب مع 11 فأكثر (ومع الصفر والمئات)."""
+        return f"{n} {plural if 3 <= n <= 10 else singular}"
+
+    family_noun = counted(family_count, "شاعراً", "شعراء")
+    external_noun = counted(external_count, "شاعراً", "شعراء")
+    total_poets_noun = counted(family_count + external_count, "شاعراً", "شعراء")
+    total_poems_noun = counted(total_poems, "قصيدة", "قصائد")
+    linked_noun = counted(linked_count, "قصيدة", "قصائد")
+
+    description = data.get("site", {}).get("subtitle") or f"نبذة عن {SITE_NAME} وأسئلة شائعة حوله."
+    breadcrumb_nav = breadcrumb_html(simple_breadcrumb_items("عن الديوان", canonical))
+
+    faqs = [
+        (
+            "ما هو ديوان آل السويلم؟",
+            f"{SITE_NAME} موقع إلكتروني يوثّق قصائد وشعراء أسرة آل السويلم (فرع من قبيلة عتيبة) "
+            "في مكان واحد، إضافة إلى قصائد شعراء من خارج الأسرة تجاوبوا معهم عبر الزمن بالرد أو المجاراة.",
+        ),
+        (
+            "كم عدد الشعراء في الديوان؟",
+            f"يضم الديوان حالياً {family_noun} من أسرة آل السويلم، و{external_noun} "
+            f"من خارج الأسرة شاركوا بالرد أو المجاراة على قصائدهم، بإجمالي {total_poets_noun}.",
+        ),
+        (
+            "كم عدد القصائد المحفوظة في الديوان؟",
+            f"يحتوي الديوان على {total_poems_noun} حتى الآن، منها {linked_noun} مرتبطة "
+            "مباشرة بقصيدة أصلية بوصفها رداً أو مجاراة عليها.",
+        ),
+        (
+            "ما الفرق بين قصيدة (بدع) و(رد) و(مجاراة)؟",
+            "البدع هي القصيدة التي يبتدئ بها الشاعر موضوعاً جديداً بوزن وقافية من اختياره. "
+            "الرد قصيدة يكتبها شاعر آخر جواباً على قصيدة بدع، ملتزماً بنفس وزنها وقافيتها. "
+            "أما المجاراة فقصيدة تحاكي وزن وقافية قصيدة سابقة، عادة إعجاباً بها أو تفاعلاً معها، "
+            "دون أن تكون بالضرورة رداً مباشراً موجَّهاً لصاحبها.",
+        ),
+        (
+            "هل كل قصيدة رد أو مجاراة مرتبطة بأصلها؟",
+            "نعم، كل قصيدة رد أو مجاراة بالديوان تظهر بصفحتها إلى جانب القصيدة الأصلية (البدع) "
+            "التي كُتبت رداً عليها أو مجاراة لها، مع روابط مباشرة بين الاثنتين.",
+        ),
+        (
+            "من يدير الديوان ويحدّثه؟",
+            f"تُدار محتويات {SITE_NAME} وتُحدَّث من قبل أسرة آل السويلم نفسها.",
+        ),
+    ]
+
+    faq_items_html = "\n".join(
+        f'<details class="faq-item"><summary>{esc(q)}</summary><p>{esc(a)}</p></details>'
+        for q, a in faqs
+    )
+
+    body = f"""
+{breadcrumb_nav}
+<div class="poet-bio-banner">
+  <div><h1>عن ديوان آل السويلم</h1><p>{esc(description)}</p></div>
+</div>
+<div class="about-stats">
+  <div class="about-stat"><b>{family_count}</b><span>شاعر من الأسرة</span></div>
+  <div class="about-stat"><b>{external_count}</b><span>شاعر من خارج الأسرة</span></div>
+  <div class="about-stat"><b>{total_poems}</b><span>قصيدة بالديوان</span></div>
+  <div class="about-stat"><b>{linked_count}</b><span>قصيدة رد/مجاراة مرتبطة</span></div>
+</div>
+<h2 class="section-label">أسئلة شائعة</h2>
+<div class="faq-list">{faq_items_html}</div>
+<p style="text-align:center;margin-top:20px"><a href="/poets/" style="color:var(--gold)">تصفّح شعراء الديوان ←</a></p>"""
+
+    faq_json_ld = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": q,
+                "acceptedAnswer": {"@type": "Answer", "text": a},
+            }
+            for q, a in faqs
+        ],
+    }
+    breadcrumb = breadcrumb_json_ld(simple_breadcrumb_items("عن الديوان", canonical))
+    return "about.html", page_shell(title, description, canonical, body, ld_scripts(faq_json_ld, breadcrumb))
+
+
 def build_404_page():
     canonical = f"{SITE_URL}/404.html"
     title = f"الصفحة غير موجودة | {SITE_NAME}"
@@ -555,6 +658,7 @@ def update_index_links(data):
     )
     if data.get("externalPoets"):
         links += '\n    <a href="/respondents.html">شعراء تجاوبوا مع الديوان</a>'
+    links += '\n    <a href="/about.html">عن الديوان وأسئلة شائعة</a>'
 
     block = (
         f'{start_marker}\n  <nav class="footer-links" aria-label="روابط سريعة لصفحات الشعراء">\n'
@@ -616,6 +720,10 @@ def main():
         sitemap_entries.append((f"{SITE_URL}/{fname}", None))
     elif respondents_path.exists():
         respondents_path.unlink()
+
+    about_fname, about_html = build_about_page(data)
+    (ROOT / about_fname).write_text(about_html, encoding="utf-8")
+    sitemap_entries.append((f"{SITE_URL}/{about_fname}", None))
 
     (ROOT / "404.html").write_text(build_404_page(), encoding="utf-8")
 
