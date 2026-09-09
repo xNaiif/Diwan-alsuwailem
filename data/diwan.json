@@ -1809,7 +1809,12 @@
               "ajz": "قوم واقبل دعوة محيل واقبل دعوتي"
             }
           ],
-          "addedAt": "2026-09-09"
+          "addedAt": "2026-09-09",
+          "mujarat": {
+            "respondingToPoet": "تراحيب بن سويلم العتيبي",
+            "respondingToTitle": "زائر يزورني ما عرفت انه سروق",
+            "respondingToId": "poet-1-poem-209"
+          }
         }
       ]
     },
@@ -2248,7 +2253,12 @@
               "ajz": "وفعلك ينومس يوم الافعال يطرن"
             }
           ],
-          "addedAt": "2026-09-09"
+          "addedAt": "2026-09-09",
+          "mujarat": {
+            "respondingToPoet": "محيل بن سويلم العتيبي",
+            "respondingToTitle": "رد على قصيدتي نايف مشخص وعبدالمجيد سعود",
+            "respondingToId": "poet-3-poem-52"
+          }
         }
       ]
     },
@@ -2379,7 +2389,12 @@
               "ajz": "ليا جات لك قل للغنادير بالطقاق"
             }
           ],
-          "addedAt": "2026-09-09"
+          "addedAt": "2026-09-09",
+          "mujarat": {
+            "respondingToPoet": "محيل بن سويلم العتيبي",
+            "respondingToTitle": "ابي بنت شيخ صالحة",
+            "respondingToId": "poet-3-poem-64"
+          }
         }
       ]
     },
