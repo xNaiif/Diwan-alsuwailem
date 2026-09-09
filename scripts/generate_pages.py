@@ -18,7 +18,7 @@ from pathlib import Path
 
 SITE_URL = "https://diwan-alswilem.com"
 SITE_NAME = "ديوان آل السويلم"
-CSS_VERSION = "7"  # رفعه عند أي تعديل بـcss/style.css عشان يجبر المتصفحات تحمّل النسخة الجديدة
+CSS_VERSION = "8"  # رفعه عند أي تعديل بـcss/style.css عشان يجبر المتصفحات تحمّل النسخة الجديدة
 ROOT = Path(__file__).resolve().parent.parent  # جذر المستودع
 DATA_PATH = ROOT / "data" / "diwan.json"
 POEMS_DIR = ROOT / "poems"
@@ -401,7 +401,9 @@ def build_poet_page(poet):
     photo_html = (
         f'<img src="{esc(poet["photo"])}" alt="{esc("صورة الشاعر " + poet["name"])}" width="52" height="52" '
         f'style="width:52px;height:52px;border-radius:50%;object-fit:cover" loading="lazy" decoding="async" />'
-        if poet.get("photo") else ""
+        if poet.get("photo") else
+        '<span class="poet-photo-placeholder" style="width:52px;height:52px;font-size:1.3rem" '
+        'title="بانتظار إضافة صورة الشاعر">▲</span>'
     )
     bio_section = (
         f'<span class="section-label">نبذة عن الشاعر</span><p style="max-width:680px;margin:0 auto;color:var(--text-muted)">{esc(poet["bio"])}</p>'
@@ -434,7 +436,8 @@ def build_poets_index_page(data):
     for poet in poets:
         photo_html = (
             f'<img src="{esc(poet["photo"])}" alt="{esc("صورة الشاعر " + poet["name"])}" loading="lazy" decoding="async" />'
-            if poet.get("photo") else ""
+            if poet.get("photo") else
+            '<span class="poet-photo-placeholder" title="بانتظار إضافة صورة الشاعر">▲</span>'
         )
         bio_snippet = esc(poet.get("bio", ""))
         count = len(poet.get("poems", []))

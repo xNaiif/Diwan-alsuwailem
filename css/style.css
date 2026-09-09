@@ -294,6 +294,8 @@ main{position:relative;z-index:1;max-width:var(--container);margin:0 auto;paddin
 .poets-index-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;display:flex;gap:14px;align-items:flex-start;text-decoration:none;color:inherit;transition:border-color .18s ease,transform .18s ease}
 .poets-index-card:hover{border-color:var(--ember);transform:translateY(-2px)}
 .poets-index-card img{width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.poets-index-card .poet-photo-placeholder{width:48px;height:48px;font-size:1.1rem}
+.poet-photo-placeholder{display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--surface-2);border:1px dashed var(--border);color:var(--ember);flex-shrink:0;cursor:help}
 .poets-index-card h2{margin:0 0 4px;font-family:var(--font-display);font-size:1.15rem;color:var(--text)}
 .poets-index-card p{margin:0;color:var(--text-muted);font-size:.85rem;line-height:1.5}
 
