@@ -246,7 +246,6 @@ main{position:relative;z-index:1;max-width:var(--container);margin:0 auto;paddin
 .respondent-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .respondent-list a{color:var(--text-muted);text-decoration:none;font-size:.9rem;transition:color .2s}
 .respondent-list a:hover{color:var(--ember)}
-.pending-photo-badge{display:inline-block;color:var(--ember);font-size:.7rem;vertical-align:middle;cursor:help}
 
 /* ---------- صفحة "عن الديوان" وأسئلة شائعة ---------- */
 .about-stats{display:flex;flex-wrap:wrap;gap:14px;margin:18px 0}
