@@ -18,7 +18,7 @@ from pathlib import Path
 
 SITE_URL = "https://diwan-alswilem.com"
 SITE_NAME = "ديوان آل السويلم"
-CSS_VERSION = "5"  # رفعه عند أي تعديل بـcss/style.css عشان يجبر المتصفحات تحمّل النسخة الجديدة
+CSS_VERSION = "6"  # رفعه عند أي تعديل بـcss/style.css عشان يجبر المتصفحات تحمّل النسخة الجديدة
 ROOT = Path(__file__).resolve().parent.parent  # جذر المستودع
 DATA_PATH = ROOT / "data" / "diwan.json"
 POEMS_DIR = ROOT / "poems"
@@ -489,9 +489,13 @@ def build_external_poets_page(data):
             f'<li><a href="/poems/{esc(poem["id"])}.html">{esc(poem["title"])}</a></li>'
             for poem in poet.get("poems", [])
         )
+        pending_badge = (
+            ' <span class="pending-photo-badge" title="بانتظار إضافة صورة الشاعر">▲</span>'
+            if poet.get("pendingPhoto") else ""
+        )
         sections.append(f"""
 <div class="respondent-block">
-  <h2>{esc(poet["name"])}</h2>
+  <h2>{esc(poet["name"])}{pending_badge}</h2>
   <ul class="respondent-list">{items}</ul>
 </div>""")
 
