@@ -13,6 +13,7 @@
 
 import json
 import html
+import sys
 import datetime
 from pathlib import Path
 
@@ -696,9 +697,38 @@ def clean_stale_pages(directory, expected_filenames):
             print(f"✓ removed stale page {existing}")
 
 
+def validate_data(data, all_poems):
+    """تحقق سلامة بيانات أساسي قبل البناء — يمنع نشر بيانات فاسدة بصمت
+    (تصادم معرّفات، مرجع رد/مجاراة مكسور، قصيدة بلا أبيات وبلا مصدر خارجي معروف)."""
+    errors = []
+
+    ids = [item["poem"]["id"] for item in all_poems]
+    seen = set()
+    for pid in ids:
+        if pid in seen:
+            errors.append(f"معرّف قصيدة مكرر: {pid}")
+        seen.add(pid)
+
+    poet_ids = [p["id"] for p in data.get("poets", [])] + [p["id"] for p in data.get("externalPoets", [])]
+    dup_poets = {pid for pid in poet_ids if poet_ids.count(pid) > 1}
+    for pid in dup_poets:
+        errors.append(f"معرّف شاعر مكرر: {pid}")
+
+    all_ids_set = set(ids)
+    for item in all_poems:
+        poem = item["poem"]
+        target = (poem.get("mujarat") or {}).get("respondingToId")
+        if target and target not in all_ids_set:
+            errors.append(f"مرجع mujarat.respondingToId مكسور بالقصيدة {poem['id']}: يشير إلى {target} غير الموجود")
+
+    if errors:
+        sys.exit("✗ فشل التحقق من سلامة البيانات — لم يُبنَ أي شيء:\n" + "\n".join(f"  - {e}" for e in errors))
+
+
 def main():
     data = load_data()
     all_poems = flat_poems(data)
+    validate_data(data, all_poems)
     responses_map = build_responses_map(all_poems)
 
     update_index_links(data)

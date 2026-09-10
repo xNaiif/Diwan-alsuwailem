@@ -90,7 +90,7 @@ init();
 async function init() {
   el.footerYear.textContent = new Date().getFullYear();
   try {
-    const res = await fetch("data/diwan.json");
+    const res = await fetch("data/diwan.json", { cache: "no-cache" });
     if (!res.ok) throw new Error("HTTP " + res.status);
     state.data = await res.json();
   } catch (err) {
@@ -411,11 +411,16 @@ function bindGlobalEvents() {
     e.preventDefault();
     location.hash = `poem=${card.dataset.poem}`;
   });
+  let searchDebounce;
   el.searchInput.addEventListener("input", (e) => {
-    state.query = e.target.value.trim();
-    state.visibleCount = GRID_PAGE_SIZE;
-    if (location.hash.startsWith("#poem=")) location.hash = "";
-    renderGridView();
+    const value = e.target.value;
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+      state.query = value.trim();
+      state.visibleCount = GRID_PAGE_SIZE;
+      if (location.hash.startsWith("#poem=")) location.hash = "";
+      renderGridView();
+    }, 180);
   });
 }
 
