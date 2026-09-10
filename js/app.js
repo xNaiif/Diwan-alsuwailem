@@ -31,7 +31,13 @@ function poetMark(poet, sizeStyle) {
   if (poet.photo) {
     return `<img src="${esc(poet.photo)}" class="poet-photo" style="${style}" alt="${esc(poet.name)}" loading="lazy" decoding="async" />`;
   }
-  return wasmIcon(poet.wasm, style);
+  if (WASM_ICONS[poet.wasm]) {
+    return wasmIcon(poet.wasm, style);
+  }
+  const widthMatch = /width:\s*(\d+(?:\.\d+)?)px/.exec(style);
+  const w = widthMatch ? parseFloat(widthMatch[1]) : 34;
+  const fontSize = Math.max(0.6, w * 0.028).toFixed(2) + "rem";
+  return `<span class="poet-photo-placeholder" style="${style}font-size:${fontSize}" title="بانتظار إضافة صورة الشاعر">▲</span>`;
 }
 
 const ROLE_LABELS = {
@@ -44,6 +50,25 @@ function roleBadge(role) {
   if (!role || !ROLE_LABELS[role]) return "";
   const r = ROLE_LABELS[role];
   return `<span class="${r.cls}">${r.text}</span>`;
+}
+
+const ROLE_TYPE_LABELS = { "بدع": "بدع (أصلية)", "رد": "ردّ", "مجاراة": "مجاراة" };
+
+/* يطابق poem_info_html بسكربت التوليد الثابت — يعرض فقط الحقول المتوفرة فعلياً بلا اختلاق بيانات */
+function poemInfoHtml(poet, poem) {
+  const fields = [
+    ["الشاعر", poet.name],
+    ["التاريخ", poem.date],
+    ["المناسبة", poem.occasion],
+    ["البحر/الوزن", poem.meter],
+    ["النوع", ROLE_TYPE_LABELS[poem.role]],
+    ["المصدر", poem.source]
+  ];
+  const rows = fields
+    .filter(([, value]) => value)
+    .map(([label, value]) => `<div><dt>${esc(label)}:</dt><dd>${esc(value)}</dd></div>`)
+    .join("");
+  return rows ? `<dl class="poem-info">${rows}</dl>` : "";
 }
 
 const GRID_PAGE_SIZE = 24;
@@ -620,6 +645,7 @@ function buildChainView(backBtn, origFound, resp, responsesSection) {
         <div class="verses chain-verses">${respVerses}</div>
       </div>
     </div>
+    ${poemInfoHtml(respPoet, respPoem)}
     ${responsesSection}`;
 }
 
@@ -636,5 +662,6 @@ function buildNormalView(backBtn, poet, poem, isExternal, responsesSection) {
       ${roleBadge(poem.role)}
     </div>
     <div class="verses">${versesHtml}</div>
+    ${poemInfoHtml(poet, poem)}
     ${responsesSection}`;
 }
