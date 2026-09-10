@@ -18,7 +18,7 @@ from pathlib import Path
 
 SITE_URL = "https://diwan-alswilem.com"
 SITE_NAME = "ديوان آل السويلم"
-CSS_VERSION = "9"  # رفعه عند أي تعديل بـcss/style.css عشان يجبر المتصفحات تحمّل النسخة الجديدة
+CSS_VERSION = "10"  # رفعه عند أي تعديل بـcss/style.css عشان يجبر المتصفحات تحمّل النسخة الجديدة
 ROOT = Path(__file__).resolve().parent.parent  # جذر المستودع
 DATA_PATH = ROOT / "data" / "diwan.json"
 POEMS_DIR = ROOT / "poems"
@@ -353,6 +353,7 @@ def build_poem_page(item, all_poems, responses_map):
     </div>
     <h2 class="chain-title">{esc(orig_poem["title"])}</h2>
     {f'<div class="verses chain-verses">{orig_verses}</div>' if orig_verses else '<p class="chain-no-verses">لم تُحفظ أبيات هذه القصيدة في الديوان</p>'}
+    <p style="margin-top:10px"><a href="/poems/{esc(orig_poem['id'])}.html" style="color:var(--gold)">افتح القصيدة كاملة ←</a></p>
   </div>
   <div class="chain-divider"><span>{role_word} {esc(poet["name"])}</span></div>
   <div class="chain-poem">
@@ -399,7 +400,7 @@ def build_poet_page(poet):
         first_verse = poem.get("verses", [{}])[0].get("sadr", "") if poem.get("verses") else ""
         extra = i >= POET_PAGE_SIZE
         cards.append(f"""
-<a href="/poems/{esc(poem['id'])}.html" class="poem-card{' poem-card-extra' if extra else ''}" style="display:block;text-decoration:none;margin-bottom:14px"{' hidden' if extra else ''}>
+<a href="/poems/{esc(poem['id'])}.html" class="poem-card{' poem-card-extra' if extra else ''}" style="margin-bottom:14px"{' hidden' if extra else ''}>
   <h2>{esc(poem["title"])}</h2>
   <p>{esc(first_verse)}</p>
 </a>""")
