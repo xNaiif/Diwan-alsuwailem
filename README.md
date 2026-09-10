@@ -5,7 +5,7 @@
 🔗 الموقع: [diwan-alswilem.com](https://diwan-alswilem.com)
 
 ## البنية
-- `data/diwan.json` — قاعدة بيانات الديوان (الشعراء والقصائد).
+- `data/diwan.json` — قاعدة بيانات الديوان (الشعراء والقصائد). مخطط الحقول كاملاً موثّق بـ[`data/SCHEMA.md`](./data/SCHEMA.md).
 - `scripts/generate_pages.py` — يولّد صفحات الشعراء والقصائد تلقائيًا من `data/diwan.json` (يشتغل عبر GitHub Actions عند أي تعديل).
 - `poems/`, `poets/` — الصفحات المولّدة تلقائيًا (لا تُعدَّل يدويًا).
 - `add-poem.html`, `ocr-poet.html` — أدوات إدارة داخلية (إضافة/تعديل/حذف قصائد، واستخراج نصوص من صور/PDF عبر OCR). غير مخصصة للزوار العامّين.

@@ -2286,7 +2286,7 @@
       "id": "poet-1",
       "name": "تراحيب بن سويلم العتيبي",
       "wasm": "wasm-1",
-      "photo": "/assets/poets/poet-1.jpg",
+      "photo": "/assets/poets/poet-1-thumb.webp",
       "bio": "تراحيب بن سويلم العتيبي، شاعر نبطي سعودي، ضابط متقاعد من الحرس الوطني بحايل.",
       "poems": [
         {
@@ -11185,7 +11185,7 @@
       "id": "poet-2",
       "name": "ضيف الله بن سويلم العتيبي",
       "wasm": "wasm-2",
-      "photo": "/assets/poets/poet-2.jpg",
+      "photo": "/assets/poets/poet-2-thumb.webp",
       "bio": "ضيف الله بن سويلم العتيبي، شاعر نبطي سعودي.",
       "poems": [
         {
@@ -15213,7 +15213,7 @@
       "id": "poet-3",
       "name": "محيل بن سويلم العتيبي",
       "wasm": "wasm-3",
-      "photo": "/assets/poets/poet-3.jpg",
+      "photo": "/assets/poets/poet-3-thumb.webp",
       "bio": "قيد الإضافة",
       "poems": [
         {
@@ -19382,7 +19382,7 @@
       "id": "poet-4",
       "name": "عيسى عواض بن سويلم",
       "wasm": "wasm-4",
-      "photo": "/assets/poets/poet-4.jpg",
+      "photo": "/assets/poets/poet-4-thumb.webp",
       "bio": "قيد الإضافة",
       "poems": [
         {
@@ -19783,7 +19783,7 @@
       "id": "poet-5",
       "name": "عواض بن سويلم",
       "wasm": "wasm-5",
-      "photo": "/assets/poets/poet-5.jpg",
+      "photo": "/assets/poets/poet-5-thumb.webp",
       "bio": "قيد الإضافة",
       "poems": [
         {
