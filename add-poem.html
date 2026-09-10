@@ -78,11 +78,14 @@ button.danger{background:#b3462c;border-color:#b3462c;color:#fff;font-weight:600
     ⚠️ <b>تنبيه أمني:</b> هذا التوكن يُخزَّن فقط داخل متصفحك على جهازك (localStorage) ولا يُرسل لأي جهة غير GitHub مباشرة — لكنه يعطي صلاحية كتابة على <b>كل ملفات المستودع</b> (مو بس بيانات القصايد)، فخذ حذرك منه مثل كلمة سر.
     لا تلصقه أبداً على جهاز/متصفح عام أو مشترك، ولا تشاركه مع أحد. أنشئ دائماً <b>fine-grained token</b> محدود بهذا المستودع فقط (وليس بكل حساباتك)، وبصلاحية Contents: Read and write فقط، وبتاريخ انتهاء قريب. احذفه من إعدادات GitHub فور ما تنتهي من الإضافة إذا كنت على جهاز غير جهازك الشخصي.
   </p>
-  <label>GitHub Token</label>
-  <input type="password" id="gh-token" placeholder="github_pat_..." autocomplete="off"/>
+  <label for="gh-token">GitHub Token</label>
+  <div style="display:flex;gap:6px;align-items:stretch">
+    <input type="password" id="gh-token" placeholder="github_pat_..." autocomplete="off" style="flex:1"/>
+    <button type="button" id="gh-token-toggle" onclick="toggleTokenVisibility()" title="إظهار/إخفاء التوكن" style="flex:0 0 auto">👁</button>
+  </div>
   <p class="hint">اضغط <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="color:var(--gold)">هنا</a> لإنشاء fine-grained token جديد — Repository access: Only select repositories (اختر الديوان) — Permissions → Contents: Read and write</p>
   <button onclick="clearToken()" style="margin-top:6px">حذف التوكن المحفوظ من هذا المتصفح</button>
-  <label>المستودع</label>
+  <label for="gh-repo">المستودع</label>
   <input type="text" id="gh-repo" placeholder="xNaiif/Diwan-alsuwailem"/>
   <div style="margin-top:10px;display:flex;gap:8px">
     <button onclick="saveSettings()" class="primary">حفظ الإعدادات</button>
@@ -95,33 +98,33 @@ button.danger{background:#b3462c;border-color:#b3462c;color:#fff;font-weight:600
   <p id="status" style="color:var(--text-muted);font-size:.9rem">يحمّل البيانات…</p>
 </div>
 
-<div class="mode-tabs" id="main-tabs">
-  <button type="button" class="mode-tab active" onclick="setMainTab('add')">➕ إضافة</button>
-  <button type="button" class="mode-tab" onclick="setMainTab('edit')">✏️ تعديل</button>
-  <button type="button" class="mode-tab" onclick="setMainTab('delete')">🗑️ حذف</button>
+<div class="mode-tabs" id="main-tabs" role="tablist">
+  <button type="button" class="mode-tab active" role="tab" aria-selected="true" onclick="setMainTab('add')">➕ إضافة</button>
+  <button type="button" class="mode-tab" role="tab" aria-selected="false" onclick="setMainTab('edit')">✏️ تعديل</button>
+  <button type="button" class="mode-tab" role="tab" aria-selected="false" onclick="setMainTab('delete')">🗑️ حذف</button>
 </div>
 
 <form id="poem-form" class="tab-panel" style="display:none">
 
   <fieldset>
     <legend>نوع الإضافة</legend>
-    <div class="mode-tabs" style="margin-bottom:0" id="add-mode-tabs">
-      <button type="button" class="mode-tab active" onclick="setAddMode('internal')">قصيدة لشاعر السويلم</button>
-      <button type="button" class="mode-tab" onclick="setAddMode('external')">بديعة شاعر خارجي</button>
+    <div class="mode-tabs" style="margin-bottom:0" id="add-mode-tabs" role="tablist">
+      <button type="button" class="mode-tab active" role="tab" aria-selected="true" onclick="setAddMode('internal')">قصيدة لشاعر السويلم</button>
+      <button type="button" class="mode-tab" role="tab" aria-selected="false" onclick="setAddMode('external')">بديعة شاعر خارجي</button>
     </div>
   </fieldset>
 
   <!-- ================= قسم شاعر السويلم ================= -->
   <div id="internal-section">
-    <label>الشاعر</label>
+    <label for="poet-select">الشاعر</label>
     <select id="poet-select"></select>
 
     <div id="new-poet-fields" class="new-poet-fields hidden-section">
-      <label>الاسم الكامل</label>
+      <label for="new-poet-name">الاسم الكامل</label>
       <input type="text" id="new-poet-name" placeholder="مثال: ضيف الله السويلم"/>
-      <label>نبذة مختصرة</label>
+      <label for="new-poet-bio">نبذة مختصرة</label>
       <textarea id="new-poet-bio" placeholder="تعريف مختصر بالشاعر وأسلوبه…" style="min-height:70px"></textarea>
-      <label>الوسم (الرمز المرئي في الموقع)</label>
+      <label for="new-poet-wasm">الوسم (الرمز المرئي في الموقع)</label>
       <select id="new-poet-wasm"></select>
     </div>
   </div>
@@ -130,7 +133,7 @@ button.danger{background:#b3462c;border-color:#b3462c;color:#fff;font-weight:600
   <div id="external-section" class="hidden-section">
     <fieldset>
       <legend>بديعة شاعر خارجي</legend>
-      <label>اسم الشاعر</label>
+      <label for="ext-poet-name">اسم الشاعر</label>
       <input type="text" id="ext-poet-name" placeholder="مثال: حبيب العازمي"/>
       <p class="hint">لو الشاعر موجود مسبقاً بالقائمة، يُضاف له. وإلا يُنشأ شاعر جديد</p>
     </fieldset>
@@ -148,19 +151,19 @@ button.danger{background:#b3462c;border-color:#b3462c;color:#fff;font-weight:600
   <div id="mujarat-ref-section" class="hidden-section">
     <fieldset style="border-color:var(--gold)">
       <legend>القصيدة الأصلية (البدع)</legend>
-      <label>ابحث بالاسم أو عنوان القصيدة</label>
-      <input type="text" id="mujarat-search" list="poem-datalist" placeholder="اكتب اسم الشاعر أو عنوان القصيدة…" oninput="onMujaratSearch()"/>
+      <label for="mujarat-search">ابحث عن القصيدة الأصلية</label>
+      <input type="text" id="mujarat-search" list="poem-datalist" placeholder="اكتب اسم الشاعر لعرض قصائده، ثم اختر القصيدة من القائمة…" oninput="onMujaratSearch()"/>
       <datalist id="poem-datalist"></datalist>
       <div id="mujarat-found-badge"></div>
 
       <button type="button" class="toggle-add-missing" onclick="toggleAddMissing()">القصيدة مو موجودة بالديوان؟ أضفها الآن ↓</button>
 
       <div id="add-missing-fields" class="add-missing-fields hidden-section">
-        <label>اسم الشاعر (الأصلي/الخارجي)</label>
+        <label for="missing-poet-name">اسم الشاعر (الأصلي/الخارجي)</label>
         <input type="text" id="missing-poet-name" placeholder="مثال: حبيب العازمي"/>
-        <label>عنوان قصيدته</label>
+        <label for="missing-poem-title">عنوان قصيدته</label>
         <input type="text" id="missing-poem-title" placeholder="عنوان القصيدة"/>
-        <label>أبياته (اختياري — تظهر فوق ردّك بالموقع)</label>
+        <label for="missing-poem-verses">أبياته (اختياري — تظهر فوق ردّك بالموقع)</label>
         <textarea id="missing-poem-verses" class="paste-area" placeholder="الصق أبياته هنا — كل سطر = نصف بيت. اتركه فاضي لو ما عندك الأبيات" style="min-height:140px"></textarea>
       </div>
     </fieldset>
@@ -169,23 +172,23 @@ button.danger{background:#b3462c;border-color:#b3462c;color:#fff;font-weight:600
   <!-- ================= بيانات القصيدة ================= -->
   <fieldset>
     <legend>بيانات القصيدة</legend>
-    <label>عنوان القصيدة</label>
+    <label for="poem-title">عنوان القصيدة</label>
     <input type="text" id="poem-title"/>
     <div class="row">
-      <div><label>التاريخ (اختياري)</label><input type="text" id="poem-date"/></div>
-      <div><label>المصدر (اختياري)</label><input type="text" id="poem-source" placeholder="تويتر، موقع الشعر…"/></div>
+      <div><label for="poem-date">التاريخ (اختياري)</label><input type="text" id="poem-date"/></div>
+      <div><label for="poem-source">المصدر (اختياري)</label><input type="text" id="poem-source" placeholder="تويتر، موقع الشعر…"/></div>
     </div>
-    <label>مناسبة القصيدة (اختياري)</label>
-    <textarea id="poem-occasion" placeholder="الحدث أو المناسبة اللي قيلت القصيدة على أثرها — اتركه فاضي لو ما تنطبق، ولن يظهر شيء بصفحة القصيدة" style="min-height:60px"></textarea>
+    <label for="poem-occasion">مناسبة القصيدة (اختياري)</label>
+    <textarea id="poem-occasion" placeholder="الحدث أو المناسبة اللي قيلت القصيدة على أثرها — اتركه فاضي لو ما تنطبق، ولن يظهر شيء بصفحة القصيدة" style="min-height:80px"></textarea>
   </fieldset>
 
   <!-- ================= الأبيات ================= -->
   <fieldset>
     <legend>الأبيات</legend>
     <p class="hint" id="ext-verses-note" style="display:none">الأبيات اختيارية للشعراء الخارجيين</p>
-    <div class="mode-tabs">
-      <button type="button" class="mode-tab active" onclick="setVerseMode('manual')">بيت بيت</button>
-      <button type="button" class="mode-tab" onclick="setVerseMode('paste')">لصق القصيدة كاملة</button>
+    <div class="mode-tabs" id="verse-mode-tabs" role="tablist">
+      <button type="button" class="mode-tab active" role="tab" aria-selected="true" onclick="setVerseMode('manual')">بيت بيت</button>
+      <button type="button" class="mode-tab" role="tab" aria-selected="false" onclick="setVerseMode('paste')">لصق القصيدة كاملة</button>
     </div>
 
     <div class="mode-panel active" id="mode-manual">
@@ -209,7 +212,7 @@ button.danger{background:#b3462c;border-color:#b3462c;color:#fff;font-weight:600
   </fieldset>
 
   <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
-    <button type="button" class="primary" onclick="publishDirect()">🚀 نشر مباشرة على GitHub</button>
+    <button type="button" id="publish-direct-btn" class="primary" onclick="publishDirect()">🚀 نشر مباشرة على GitHub</button>
     <button type="button" class="sky" onclick="generateSnippet()">📋 نسخ الكود فقط</button>
   </div>
 </form>
@@ -220,8 +223,8 @@ button.danger{background:#b3462c;border-color:#b3462c;color:#fff;font-weight:600
 <div id="edit-panel" class="tab-panel">
   <fieldset>
     <legend>ابحث عن القصيدة</legend>
-    <label>اكتب اسم الشاعر أو عنوان القصيدة</label>
-    <input type="text" id="edit-search" list="edit-poem-datalist" placeholder="اكتب اسم الشاعر أو عنوان القصيدة…" oninput="onEditSearch()"/>
+    <label for="edit-search">ابحث عن القصيدة</label>
+    <input type="text" id="edit-search" list="edit-poem-datalist" placeholder="اكتب اسم الشاعر لعرض قصائده، ثم اختر القصيدة من القائمة…" oninput="onEditSearch()"/>
     <datalist id="edit-poem-datalist"></datalist>
     <div id="edit-found-badge"></div>
   </fieldset>
@@ -234,14 +237,14 @@ button.danger{background:#b3462c;border-color:#b3462c;color:#fff;font-weight:600
 
     <fieldset>
       <legend>بيانات القصيدة</legend>
-      <label>عنوان القصيدة</label>
+      <label for="edit-title">عنوان القصيدة</label>
       <input type="text" id="edit-title"/>
       <div class="row">
-        <div><label>التاريخ</label><input type="text" id="edit-date"/></div>
-        <div><label>المصدر</label><input type="text" id="edit-source"/></div>
+        <div><label for="edit-date">التاريخ</label><input type="text" id="edit-date"/></div>
+        <div><label for="edit-source">المصدر</label><input type="text" id="edit-source"/></div>
       </div>
-      <label>مناسبة القصيدة (اختياري)</label>
-      <textarea id="edit-occasion" placeholder="الحدث أو المناسبة اللي قيلت القصيدة على أثرها — اتركه فاضي لو ما تنطبق، ولن يظهر شيء بصفحة القصيدة" style="min-height:60px"></textarea>
+      <label for="edit-occasion">مناسبة القصيدة (اختياري)</label>
+      <textarea id="edit-occasion" placeholder="الحدث أو المناسبة اللي قيلت القصيدة على أثرها — اتركه فاضي لو ما تنطبق، ولن يظهر شيء بصفحة القصيدة" style="min-height:80px"></textarea>
     </fieldset>
 
     <fieldset>
@@ -252,7 +255,7 @@ button.danger{background:#b3462c;border-color:#b3462c;color:#fff;font-weight:600
     </fieldset>
 
     <div style="margin-top:16px">
-      <button type="button" class="primary" onclick="publishEdit()">💾 حفظ التعديلات</button>
+      <button type="button" id="publish-edit-btn" class="primary" onclick="publishEdit()">💾 حفظ التعديلات</button>
     </div>
   </div>
 </div>
@@ -263,8 +266,8 @@ button.danger{background:#b3462c;border-color:#b3462c;color:#fff;font-weight:600
 <div id="delete-panel" class="tab-panel">
   <fieldset>
     <legend>ابحث عن القصيدة المراد حذفها</legend>
-    <label>اكتب اسم الشاعر أو عنوان القصيدة</label>
-    <input type="text" id="delete-search" list="delete-poem-datalist" placeholder="اكتب اسم الشاعر أو عنوان القصيدة…" oninput="onDeleteSearch()"/>
+    <label for="delete-search">ابحث عن القصيدة</label>
+    <input type="text" id="delete-search" list="delete-poem-datalist" placeholder="اكتب اسم الشاعر لعرض قصائده، ثم اختر القصيدة من القائمة…" oninput="onDeleteSearch()"/>
     <datalist id="delete-poem-datalist"></datalist>
     <div id="delete-found-badge"></div>
   </fieldset>
@@ -308,6 +311,13 @@ function saveSettings(){
   settings.repo = document.getElementById('gh-repo').value.trim() || 'xNaiif/Diwan-alsuwailem';
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
   showConnStatus('تم الحفظ ✓', true);
+}
+function toggleTokenVisibility(){
+  const input = document.getElementById('gh-token');
+  const btn = document.getElementById('gh-token-toggle');
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  btn.textContent = showing ? '👁' : '🙈';
 }
 function clearToken(){
   settings.token = '';
@@ -383,7 +393,9 @@ function afterLoad(){
 function setMainTab(tab){
   const tabs = ['add','edit','delete'];
   document.querySelectorAll('#main-tabs .mode-tab').forEach((t,i)=>{
-    t.classList.toggle('active', tabs[i]===tab);
+    const isActive = tabs[i]===tab;
+    t.classList.toggle('active', isActive);
+    t.setAttribute('aria-selected', isActive ? 'true' : 'false');
   });
   document.getElementById('poem-form').style.display = tab==='add' ? 'block' : 'none';
   document.getElementById('edit-panel').style.display = tab==='edit' ? 'block' : 'none';
@@ -454,7 +466,9 @@ function toggleNewPoetFields(){
 function setAddMode(mode){
   addMode = mode;
   document.querySelectorAll('#add-mode-tabs .mode-tab').forEach((t,i)=>{
-    t.classList.toggle('active', (i===0) === (mode==='internal'));
+    const isActive = (i===0) === (mode==='internal');
+    t.classList.toggle('active', isActive);
+    t.setAttribute('aria-selected', isActive ? 'true' : 'false');
   });
   document.getElementById('internal-section').classList.toggle('hidden-section', mode!=='internal');
   document.getElementById('external-section').classList.toggle('hidden-section', mode!=='external');
@@ -478,7 +492,9 @@ function setRole(role){
 function updateRolePills(){
   document.querySelectorAll('.role-pill').forEach(btn=>{
     const r = btn.dataset.role;
-    btn.className = 'role-pill' + (r===currentRole ? ` active-${r||'بدع'}` : '');
+    const isActive = r===currentRole;
+    btn.className = 'role-pill' + (isActive ? ` active-${r||'بدع'}` : '');
+    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
   });
 }
 
@@ -512,13 +528,13 @@ function setVerseMode(mode){
   verseMode = mode;
   document.getElementById('mode-manual').classList.toggle('active', mode==='manual');
   document.getElementById('mode-paste').classList.toggle('active', mode==='paste');
-  document.querySelectorAll('fieldset:has(#mode-manual) .mode-tab, fieldset:has(#mode-paste) .mode-tab').forEach(()=>{});
-  const tabs = document.querySelectorAll('#mode-manual').length ? null : null;
-  // تفعيل تبويب الأبيات تحديداً (الثاني بالصفحة)
-  const verseTabs = document.querySelectorAll('.mode-tabs')[1];
+  // تفعيل تبويب الأبيات تحديداً (له id ثابت عشان ما نعتمد على ترتيب العناصر بالصفحة)
+  const verseTabs = document.getElementById('verse-mode-tabs');
   if(verseTabs){
     verseTabs.querySelectorAll('.mode-tab').forEach((t,i)=>{
-      t.classList.toggle('active', (i===0) === (mode==='manual'));
+      const isActive = (i===0) === (mode==='manual');
+      t.classList.toggle('active', isActive);
+      t.setAttribute('aria-selected', isActive ? 'true' : 'false');
     });
   }
 }
@@ -658,6 +674,18 @@ function createPendingExternalPoet(pendingExternal, diwanCopy){
   return extPoemId;
 }
 
+/* حارس أخير (دفاع بعمق فوق nextNumericId): يتأكد إن كل معرّفات الشعراء والقصايد بنسخة
+   الديوان لسا فريدة بعد الإضافة — شبه مستحيل يتفعّل، لكنه خط الدفاع الأخير قبل النشر. */
+function assertNoIdCollisions(diwanCopy){
+  const seen = new Set();
+  const check = id=>{
+    if(seen.has(id)) throw new Error('خطأ داخلي: تعارض معرّف، حاول مرة أخرى');
+    seen.add(id);
+  };
+  (diwanCopy.poets||[]).forEach(p=>{ check(p.id); p.poems.forEach(poem=>check(poem.id)); });
+  (diwanCopy.externalPoets||[]).forEach(p=>{ check(p.id); p.poems.forEach(poem=>check(poem.id)); });
+}
+
 function applyToLocalDiwan(data, diwanCopy){
   if(data.type==='external'){
     let extPoet = (diwanCopy.externalPoets||[]).find(p=>p.name===data.poetName);
@@ -676,6 +704,7 @@ function applyToLocalDiwan(data, diwanCopy){
       poem.mujarat.respondingToId = respondingToId;
     }
     extPoet.poems.push(poem);
+    assertNoIdCollisions(diwanCopy);
     return poem;
   }
 
@@ -698,6 +727,7 @@ function applyToLocalDiwan(data, diwanCopy){
 
   data.poem.id = nextNumericId(poet.id+'-poem-', poet.poems.map(p=>p.id));
   poet.poems.push(data.poem);
+  assertNoIdCollisions(diwanCopy);
   return data.poem;
 }
 
@@ -707,6 +737,8 @@ async function publishDirect(){
   const data = buildPoemData();
   if(!data) return;
   showPublishStatus('⏳ جاري النشر…', null);
+  const btn = document.getElementById('publish-direct-btn');
+  if(btn) btn.disabled = true;
   try{
     const repo = settings.repo;
     const path = diwan.site?.dataPath || 'data/diwan.json';
@@ -731,14 +763,18 @@ async function publishDirect(){
     showPublishStatus(`✅ تم النشر! "${newPoem.title}" راح تظهر بالموقع خلال دقيقة.`, true);
     resetForm();
   }catch(e){ showPublishStatus('❌ خطأ: '+e.message, false); }
+  finally{ if(btn) btn.disabled = false; }
 }
 
 function generateSnippet(){
   const data = buildPoemData();
   if(!data) return;
   const copy = JSON.parse(JSON.stringify(diwan));
-  const newPoem = applyToLocalDiwan(data, copy);
-  applyToLocalDiwan(data, diwan);
+  let newPoem;
+  try{
+    newPoem = applyToLocalDiwan(data, copy);
+    applyToLocalDiwan(data, diwan);
+  }catch(e){ alert(e.message); return; }
   const snippet = JSON.stringify(newPoem, null, 2);
   const poetName = data.type==='external' ? data.poetName : diwan.poets.find(p=>p.id===data.poetId)?.name;
   document.getElementById('output').value = snippet;
@@ -785,7 +821,7 @@ function resetForm(){
   addVerseRow(); addVerseRow();
   window.scrollTo({top:0, behavior:'smooth'});
 }
-function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 /* ====================================================================
    تبويب: تعديل قصيدة موجودة
@@ -911,6 +947,8 @@ async function publishEdit(){
     .filter(v=>v.sadr||v.ajz);
 
   showPublishStatus('⏳ جاري حفظ التعديلات…', null);
+  const btn = document.getElementById('publish-edit-btn');
+  if(btn) btn.disabled = true;
   try{
     const repo = settings.repo;
     const path = diwan.site?.dataPath || 'data/diwan.json';
@@ -949,6 +987,7 @@ async function publishEdit(){
     rebuildPoetSelectors();
     showPublishStatus(`✅ تم حفظ التعديلات على "${title}"! التغييرات راح تظهر بالموقع كامل (صفحتها وصفحة الشاعر والفهرس) خلال دقيقة.`, true);
   }catch(e){ showPublishStatus('❌ خطأ: '+e.message, false); }
+  finally{ if(btn) btn.disabled = false; }
 }
 
 /* ====================================================================
@@ -993,7 +1032,7 @@ function loadDeletePreview(poemId){
       <p style="margin:0 0 6px"><b>${esc(poet.name)}</b> — ${esc(poem.title)}</p>
       <p class="hint" style="margin:0">${esc((poem.verses&&poem.verses[0]&&poem.verses[0].sadr)||'')}</p>
       ${warn}
-      <button type="button" class="danger" onclick="publishDelete()" style="margin-top:12px">🗑️ احذف هذي القصيدة نهائياً من الديوان</button>
+      <button type="button" id="delete-confirm-btn" class="danger" onclick="publishDelete()" style="margin-top:12px">🗑️ احذف هذي القصيدة نهائياً من الديوان</button>
     </fieldset>`;
   document.getElementById('delete-preview').classList.remove('hidden-section');
 }
@@ -1006,6 +1045,8 @@ async function publishDelete(){
   if(!confirm(`متأكد تبي تحذف "${found.poem.title}" لـ${found.poet.name} نهائياً من الديوان؟ هذا يحذف صفحتها بالموقع بالكامل (تقدر ترجعها لاحقاً من تاريخ Git لو احتجت).`)) return;
 
   showPublishStatus('⏳ جاري الحذف…', null);
+  const btn = document.getElementById('delete-confirm-btn');
+  if(btn) btn.disabled = true;
   try{
     const repo = settings.repo;
     const path = diwan.site?.dataPath || 'data/diwan.json';
@@ -1037,6 +1078,7 @@ async function publishDelete(){
     document.getElementById('delete-found-badge').innerHTML = '';
     showPublishStatus(`✅ تم حذف "${removed.title}" من الديوان. صفحتها بالموقع وبالفهرس بتختفي تلقائياً خلال دقيقة.`, true);
   }catch(e){ showPublishStatus('❌ خطأ: '+e.message, false); }
+  finally{ if(btn) btn.disabled = false; }
 }
 
 init();

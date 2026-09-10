@@ -7,6 +7,11 @@
     "repo": "xNaiif/Diwan-alsuwailem",
     "dataPath": "data/diwan.json"
   },
+  "roleLabels": {
+    "بدع": "بدع (أصلية)",
+    "رد": "ردّ",
+    "مجاراة": "مجاراة"
+  },
   "externalPoets": [
     {
       "id": "ext-1",

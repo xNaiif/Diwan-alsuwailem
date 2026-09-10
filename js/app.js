@@ -52,16 +52,17 @@ function roleBadge(role) {
   return `<span class="${r.cls}">${r.text}</span>`;
 }
 
-const ROLE_TYPE_LABELS = { "بدع": "بدع (أصلية)", "رد": "ردّ", "مجاراة": "مجاراة" };
-
-/* يطابق poem_info_html بسكربت التوليد الثابت — يعرض فقط الحقول المتوفرة فعلياً بلا اختلاق بيانات */
+/* يطابق poem_info_html بسكربت التوليد الثابت — يعرض فقط الحقول المتوفرة فعلياً بلا اختلاق بيانات.
+   نص "النوع" مصدره الوحيد data/diwan.json["roleLabels"] (مشترك مع scripts/generate_pages.py) —
+   لا تُضف ثابت جديد يكرّره هنا. */
 function poemInfoHtml(poet, poem) {
+  const roleLabels = state.data.roleLabels || {};
   const fields = [
     ["الشاعر", poet.name],
     ["التاريخ", poem.date],
     ["المناسبة", poem.occasion],
     ["البحر/الوزن", poem.meter],
-    ["النوع", ROLE_TYPE_LABELS[poem.role]],
+    ["النوع", roleLabels[poem.role]],
     ["المصدر", poem.source]
   ];
   const rows = fields
@@ -72,7 +73,7 @@ function poemInfoHtml(poet, poem) {
 }
 
 const GRID_PAGE_SIZE = 24;
-const state = { data: null, activePoet: "all", query: "", responsesMap: {}, visibleCount: GRID_PAGE_SIZE };
+const state = { data: null, activePoet: "all", query: "", responsesMap: {}, visibleCount: GRID_PAGE_SIZE, allPoemsFlat: null };
 
 const el = {
   subtitle:    document.getElementById("site-subtitle"),
@@ -99,6 +100,7 @@ async function init() {
   }
   el.subtitle.textContent = state.data.site.subtitle || "";
   if (el.footerNote) el.footerNote.textContent = state.data.site.footerNote || "";
+  state.allPoemsFlat = getAllPoemsFlat();
   state.responsesMap = buildResponsesMap();
   renderWasmLegend();
   renderFilterPills();
@@ -327,7 +329,11 @@ async function exportSelectedVersesAsImage() {
   }
 }
 
+/* تُبنى مرّة وحدة بعد تحميل البيانات (بـinit) وتُخزَّن بـstate.allPoemsFlat — تُستدعى من عدة
+   أماكن كل عملية render، فبدل إعادة بنائها من الصفر كل مرة نرجّع النسخة المخزَّنة. لو استُدعيت
+   قبل التخزين (احتياطياً) تبنيها مرة وحدة وترجعها بدون تخزين، عشان تبقى تشتغل بأي ترتيب استدعاء. */
 function getAllPoemsFlat() {
+  if (state.allPoemsFlat) return state.allPoemsFlat;
   const out = [];
   state.data.poets.forEach(poet => {
     poet.poems.forEach(poem => out.push({ poet, poem, isExternal: false }));
@@ -526,7 +532,7 @@ function renderPoemOfDay() {
     `<div class="verse"><span class="sadr">${esc(v.sadr)}</span><span class="divider"></span><span class="ajz">${esc(v.ajz)}</span></div>`
   ).join("");
   return `<a class="poem-of-day" href="/poems/${esc(poem.id)}.html" data-poem="${esc(poem.id)}" aria-label="اقرأ قصيدة اليوم كاملة">
-    <div class="poem-of-day-badge">✨ قصيدة اليوم</div>
+    <h2 class="poem-of-day-badge" style="margin-top:0">✨ قصيدة اليوم</h2>
     <div class="poem-of-day-tag">${poetMark(poet, "width:18px;height:18px;")} ${esc(poet.name)}</div>
     <h3>${esc(poem.title)}</h3>
     ${versesHtml ? `<div class="verses poem-of-day-verses">${versesHtml}</div>` : ""}
@@ -543,7 +549,7 @@ function renderRecentSection() {
     .slice(0, 10);
   if (dated.length === 0) return "";
   const cards = dated.map(({ poet, poem }) => buildPoemCard(poet, poem)).join("");
-  return `<h2 class="recent-heading">أضيف حديثاً</h2>${cards}<div class="recent-divider"></div>`;
+  return `<h3 class="recent-heading">أضيف حديثاً</h3>${cards}<div class="recent-divider"></div>`;
 }
 
 function renderBioBanner() {
@@ -569,7 +575,21 @@ function showPoem(poemId) {
     ? `<button class="back-btn" onclick="history.back()">← رجوع</button>`
     : `<button class="back-btn" data-return-to="${esc(poet.id)}">← الرجوع إلى قصائد ${esc(poet.name)}</button>`;
 
-  const responseIds = state.responsesMap[poemId] || [];
+  const isChain = (poem.role === "رد" || poem.role === "مجاراة") && poem.mujarat?.respondingToId;
+  const originalFound = isChain ? findPoem(poem.mujarat.respondingToId) : null;
+
+  // لو هذي القصيدة نفسها رد/مجاراة، نجيب كل إخوتها (القصائد الثانية اللي ردّت/جارت على نفس الأصل)
+  // بدل الاكتفاء بردود هذي القصيدة نفسها فقط — يطابق نفس منطق build_poem_page بـ
+  // scripts/generate_pages.py (sibling_source_id/resp_ids) عشان قصيدة عندها أكثر من رد/مجاراة
+  // تظهر كلها بصفحة أي وحدة منها، مو بس ردود هذي القصيدة بالذات
+  const siblingSourceId = (isChain && originalFound) ? originalFound.poem.id : poem.id;
+  const responseIds = (state.responsesMap[siblingSourceId] || []).filter(rid => rid !== poem.id);
+  if (isChain) {
+    (state.responsesMap[poem.id] || []).forEach(rid => {
+      if (!responseIds.includes(rid)) responseIds.push(rid);
+    });
+  }
+
   let responsesSection = "";
   if (responseIds.length > 0) {
     const links = responseIds.map(rid => {
@@ -580,15 +600,15 @@ function showPoem(poemId) {
         ${esc(r.poet.name)} — ${esc(r.poem.title)} ${roleBadge(r.poem.role)}
       </button>`;
     }).join("");
+    const label = isChain
+      ? "ردود ومجاراات أخرى على نفس القصيدة الأصلية"
+      : "ردود ومجاراات على هذه القصيدة";
     responsesSection = `
       <div class="mujarat-section" style="margin-top:24px">
-        <span class="mujarat-label">ردود ومجاراات على هذه القصيدة</span>
+        <span class="mujarat-label">${label}</span>
         <div class="mujarat-responses">${links}</div>
       </div>`;
   }
-
-  const isChain = (poem.role === "رد" || poem.role === "مجاراة") && poem.mujarat?.respondingToId;
-  const originalFound = isChain ? findPoem(poem.mujarat.respondingToId) : null;
 
   if (isChain && originalFound) {
     el.poemDetail.innerHTML = buildChainView(backBtn, originalFound, { poet, poem }, responsesSection);

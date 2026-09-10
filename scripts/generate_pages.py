@@ -19,13 +19,41 @@ from pathlib import Path
 
 SITE_URL = "https://diwan-alswilem.com"
 SITE_NAME = "ديوان آل السويلم"
-CSS_VERSION = "10"  # رفعه عند أي تعديل بـcss/style.css عشان يجبر المتصفحات تحمّل النسخة الجديدة
+CSS_VERSION = "11"  # رفعه عند أي تعديل بـcss/style.css عشان يجبر المتصفحات تحمّل النسخة الجديدة
 ROOT = Path(__file__).resolve().parent.parent  # جذر المستودع
 DATA_PATH = ROOT / "data" / "diwan.json"
 POEMS_DIR = ROOT / "poems"
 POETS_DIR = ROOT / "poets"
 
-ROLE_LABELS = {"بدع": "بدع (أصلية)", "رد": "ردّ", "مجاراة": "مجاراة"}
+# ملاحظة: نصوص تسميات النوع (بدع/رد/مجاراة) مصدرها الوحيد data/diwan.json["roleLabels"]
+# (مشترك مع js/app.js) — لا تُضف أي ثابت جديد هنا يكرّرها.
+
+# نصوص شارة النوع الملوّنة (badge) — أقصر من تسميات حقل "النوع"، تطابق ROLE_LABELS
+# (الخاص بالتنسيق/الـCSS classes، مو النصوص) في js/app.js
+ROLE_BADGE_TEXT = {"بدع": "بدع", "رد": "ردّ", "مجاراة": "مجاراة"}
+
+
+def role_badge_html(role):
+    """شارة النوع الملوّنة — تطابق roleBadge() في js/app.js (نفس CSS classes بـcss/style.css)."""
+    if not role or role not in ROLE_BADGE_TEXT:
+        return ""
+    return f'<span class="role-badge role-{esc(role)}">{esc(ROLE_BADGE_TEXT[role])}</span>'
+
+
+def poet_icon_html(poet, size=44):
+    """صورة/شارة الشاعر بحجم مربّع — نفس منطق poetMark() بـjs/app.js وpoet-photo-placeholder
+    المستخدم أصلاً بهذا الملف (build_poet_page / build_poets_index_page)."""
+    if poet.get("photo"):
+        return (
+            f'<img src="{esc(poet["photo"])}" class="poet-photo" alt="{esc(poet["name"])}" '
+            f'style="width:{size}px;height:{size}px;border-radius:50%;object-fit:cover" '
+            f'loading="lazy" decoding="async" />'
+        )
+    font_size = max(0.6, size * 0.028)
+    return (
+        f'<span class="poet-photo-placeholder" style="width:{size}px;height:{size}px;'
+        f'font-size:{font_size:.2f}rem" title="بانتظار إضافة صورة الشاعر">▲</span>'
+    )
 
 
 def esc(s):
@@ -268,14 +296,14 @@ def poet_json_ld(poet, canonical_url):
     return ld_scripts(data, breadcrumb)
 
 
-def poem_info_html(poet, poem):
+def poem_info_html(poet, poem, role_labels):
     """كتلة دلالية (dl) بمعلومات القصيدة — تعرض فقط الحقول المتوفرة فعلياً، بدون أي اختلاق بيانات."""
     fields = [
         ("الشاعر", poet.get("name")),
         ("التاريخ", poem.get("date")),
         ("المناسبة", poem.get("occasion")),
         ("البحر/الوزن", poem.get("meter")),
-        ("النوع", ROLE_LABELS.get(poem.get("role"))),
+        ("النوع", role_labels.get(poem.get("role"))),
         ("المصدر", poem.get("source")),
     ]
     rows = "".join(
@@ -302,14 +330,14 @@ def related_poems_html(poet, poem, is_external):
     )
 
 
-def build_poem_page(item, all_poems, responses_map):
+def build_poem_page(item, all_poems, responses_map, role_labels):
     poet, poem, is_external = item["poet"], item["poem"], item["isExternal"]
     canonical = f"{SITE_URL}/poems/{poem['id']}.html"
     description = poem.get("verses", [{}])[0].get("sadr", poem["title"]) if poem.get("verses") else poem["title"]
     title = f'{poem["title"]} — {poet["name"]} | {SITE_NAME}'
 
     breadcrumb_nav = breadcrumb_html(poem_breadcrumb_items(poet, poem, is_external, canonical))
-    info_html = poem_info_html(poet, poem)
+    info_html = poem_info_html(poet, poem, role_labels)
     related_html = related_poems_html(poet, poem, is_external)
 
     is_chain = poem.get("role") in ("رد", "مجاراة") and (poem.get("mujarat") or {}).get("respondingToId")
@@ -345,23 +373,25 @@ def build_poem_page(item, all_poems, responses_map):
         orig_verses = render_verses(orig_poem.get("verses"))
         resp_verses = render_verses(poem.get("verses"))
         role_word = "ردّ" if poem.get("role") == "رد" else "مجاراة"
+        # ترتيب العناوين h1/h2 يتبع ترتيب الظهور الفعلي بالـDOM (القصيدة الأصلية تظهر أولاً بصرياً
+        # فتاخذ h1، والرد/المجاراة الحالية تظهر ثانياً فتاخذ h2) — بدون قلب ترتيب ظهور المحتوى نفسه
         body = f"""
 {breadcrumb_nav}
 <div class="poem-chain">
   <div class="chain-poem">
-    <div class="chain-poet-label">{esc(orig_poet["name"])}
+    <div class="chain-poet-label">{role_badge_html(orig_poem.get("role") or "بدع")} {esc(orig_poet["name"])}
       {f'<span class="poem-meta">· {esc(orig_poem.get("date"))}</span>' if orig_poem.get("date") else ""}
     </div>
-    <h2 class="chain-title">{esc(orig_poem["title"])}</h2>
+    <h1 class="chain-title">{esc(orig_poem["title"])}</h1>
     {f'<div class="verses chain-verses">{orig_verses}</div>' if orig_verses else '<p class="chain-no-verses">لم تُحفظ أبيات هذه القصيدة في الديوان</p>'}
     <p style="margin-top:10px"><a href="/poems/{esc(orig_poem['id'])}.html" style="color:var(--gold)">افتح القصيدة كاملة ←</a></p>
   </div>
   <div class="chain-divider"><span>{role_word} {esc(poet["name"])}</span></div>
   <div class="chain-poem">
-    <div class="chain-poet-label">{esc(poet["name"])}
+    <div class="chain-poet-label">{role_badge_html(poem.get("role"))} {poet_icon_html(poet, 16)} {esc(poet["name"])}
       {f'<span class="poem-meta">· {esc(poem.get("date"))}</span>' if poem.get("date") else ""}
     </div>
-    <h1 class="chain-title">{esc(poem["title"])}</h1>
+    <h2 class="chain-title">{esc(poem["title"])}</h2>
     <div class="verses chain-verses">{resp_verses}</div>
   </div>
 </div>
@@ -370,11 +400,17 @@ def build_poem_page(item, all_poems, responses_map):
 {related_html}"""
     else:
         verses_html = render_verses(poem.get("verses"))
+        icon_html = (
+            f'<span class="role-badge role-بدع" style="font-size:1rem;padding:4px 14px">بدع</span>'
+            if is_external else poet_icon_html(poet, 44)
+        )
         body = f"""
 {breadcrumb_nav}
 <div class="poem-header">
+  {icon_html}
   <h1>{esc(poem["title"])}</h1>
   <div class="poem-meta">{esc(poet["name"])}{f' · {esc(poem.get("date"))}' if poem.get("date") else ""}{f' · {esc(poem.get("meter"))}' if poem.get("meter") else ""}</div>
+  {role_badge_html(poem.get("role"))}
 </div>
 {f'<div class="verses">{verses_html}</div>' if verses_html else '<p style="text-align:center;color:var(--text-faint)">لم تُحفظ أبيات هذه القصيدة في الديوان بعد</p>'}
 {info_html}
@@ -740,8 +776,9 @@ def main():
     poem_filenames = set()
     poet_filenames = {"index.html"}  # فهرس الشعراء موجود بنفس مجلد poets/ ولازم ما يُحذف كصفحة "يتيمة"
 
+    role_labels = data.get("roleLabels", {})
     for item in all_poems:
-        fname, html_doc = build_poem_page(item, all_poems, responses_map)
+        fname, html_doc = build_poem_page(item, all_poems, responses_map, role_labels)
         (POEMS_DIR / fname).write_text(html_doc, encoding="utf-8")
         poem_filenames.add(fname)
         lastmod = item["poem"].get("addedAt")
