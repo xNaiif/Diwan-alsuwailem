@@ -73,7 +73,7 @@ function poemInfoHtml(poet, poem) {
 }
 
 const GRID_PAGE_SIZE = 24;
-const state = { data: null, activePoet: "all", query: "", responsesMap: {}, visibleCount: GRID_PAGE_SIZE, allPoemsFlat: null };
+const state = { data: null, activePoet: "all", query: "", responsesMap: {}, visibleCount: GRID_PAGE_SIZE, allPoemsFlat: null, fullyLoaded: false };
 
 const el = {
   subtitle:    document.getElementById("site-subtitle"),
@@ -91,7 +91,9 @@ init();
 async function init() {
   el.footerYear.textContent = new Date().getFullYear();
   try {
-    const res = await fetch("data/diwan.json", { cache: "no-cache" });
+    // المرحلة ١: فهرس خفيف (بلا كل الأبيات/المصدر/المناسبة) يجيب أول عرض بسرعة —
+    // البيانات الكاملة تُجلب بالخلفية بعدها (loadFullData) بلا ما توقف أي شي.
+    const res = await fetch("data/diwan-index.json", { cache: "no-cache" });
     if (!res.ok) throw new Error("HTTP " + res.status);
     state.data = await res.json();
   } catch (err) {
@@ -110,6 +112,31 @@ async function init() {
   initBackToTop();
   initCompactFilterBar();
   initVerseExport();
+
+  loadFullData();
+}
+
+/* المرحلة ٢: يجيب data/diwan.json الكامل بالخلفية بعد ما الفهرس الخفيف صار جاهزاً ومعروضاً.
+   بمجرد ما يوصل، يستبدل state.data كاملة ويعيد رسم العرض الحالي (شبكة أو تفاصيل قصيدة)
+   بلا ما يفقد مكان المستخدم — قبل هذا، البحث يغطي العنوان وأول بيتين بس (نفس محتوى
+   البطاقة المعروضة أصلاً)، وفتح قصيدة طويلة يعرض حالة "جاري التحميل" بدل عرض أبيات ناقصة. */
+function loadFullData() {
+  return fetch("data/diwan.json", { cache: "no-cache" })
+    .then(res => { if (!res.ok) throw new Error("HTTP " + res.status); return res.json(); })
+    .then(fullData => {
+      state.data = fullData;
+      state.allPoemsFlat = null;
+      state.allPoemsFlat = getAllPoemsFlat();
+      state.responsesMap = buildResponsesMap();
+      state.fullyLoaded = true;
+      const hash = decodeURIComponent(location.hash.replace(/^#/, ""));
+      const [key, value] = hash.split("=");
+      if (key === "poem" && value) showPoem(value);
+      else renderGridView();
+    })
+    .catch(err => {
+      console.error("تعذّر تحميل بيانات الديوان الكاملة:", err);
+    });
 }
 
 /* شريط الفلاتر يصغّر تلقائياً وأنت تنزل بالصفحة — كل الأزرار تضل ظاهرة وقابلة للضغط، بدون أي إخفاء أو ضغطة إضافية */
@@ -574,6 +601,19 @@ function showPoem(poemId) {
   const backBtn = isExternal
     ? `<button class="back-btn" onclick="history.back()">← رجوع</button>`
     : `<button class="back-btn" data-return-to="${esc(poet.id)}">← الرجوع إلى قصائد ${esc(poet.name)}</button>`;
+
+  // قبل ما تكتمل المرحلة ٢ (البيانات الكاملة)، الأبيات المتوفرة بالفهرس الخفيف بيت/بيتين
+  // بس — نعرض حالة تحميل واضحة بدل قصيدة تبدو ناقصة، وتترسم تلقائياً كاملة بمجرد ما
+  // loadFullData() يخلص (راجع then() هناك).
+  if (!state.fullyLoaded) {
+    el.poemDetail.innerHTML = `${backBtn}
+      <div class="poem-header">
+        <h2>${esc(poem.title)}</h2>
+        <div class="poem-meta">${esc(poet.name)}${poem.date ? " · " + esc(poem.date) : ""}</div>
+      </div>
+      <p class="empty-state">⏳ جاري تحميل القصيدة كاملة…</p>`;
+    return;
+  }
 
   const isChain = (poem.role === "رد" || poem.role === "مجاراة") && poem.mujarat?.respondingToId;
   const originalFound = isChain ? findPoem(poem.mujarat.respondingToId) : null;

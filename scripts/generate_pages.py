@@ -65,6 +65,56 @@ def load_data():
         return json.load(f)
 
 
+LIGHT_INDEX_PATH = ROOT / "data" / "diwan-index.json"
+
+
+def _light_poem(poem):
+    """نسخة مصغّرة من القصيدة لملف الفهرس الخفيف — تكفي لعرض الشبكة/البحث بالعنوان وأول
+    بيتين وقصيدة اليوم، بدون كل الأبيات/المصدر/المناسبة (تُجلب لاحقاً من data/diwan.json
+    الكامل بالخلفية). نفس بنية القصيدة الحقيقية جزئياً عشان js/app.js يتعامل معها بلا أي
+    كود خاص إضافي — فقط أقل حقولاً."""
+    light = {
+        "id": poem["id"],
+        "title": poem["title"],
+        "role": poem.get("role", ""),
+        "date": poem.get("date", ""),
+        "verses": (poem.get("verses") or [])[:2],
+    }
+    if poem.get("addedAt"):
+        light["addedAt"] = poem["addedAt"]
+    mj = poem.get("mujarat") or {}
+    if mj.get("respondingToId"):
+        light["mujarat"] = {"respondingToId": mj["respondingToId"]}
+    return light
+
+
+def build_light_index(data):
+    """data/diwan-index.json — نفس بنية data/diwan.json تماماً (poets[]/externalPoets[])
+    عشان يشتغل عليها js/app.js بلا أي فرع كود خاص، لكن كل قصيدة مصغّرة (_light_poem).
+    الهدف: أول تحميل للصفحة الرئيسية يجيب بيانات صغيرة بسرعة بدل انتظار الملف الكامل
+    (كان 835KB/163KB مضغوط لـ453 قصيدة، يُحمَّل كاملاً رغم عرض 24 قصيدة فقط بالبداية)."""
+    return {
+        "site": data.get("site", {}),
+        "roleLabels": data.get("roleLabels", {}),
+        "poets": [
+            {
+                "id": p["id"], "name": p["name"],
+                "photo": p.get("photo", ""), "wasm": p.get("wasm", ""),
+                "bio": p.get("bio", ""),
+                "poems": [_light_poem(pm) for pm in p.get("poems", [])],
+            }
+            for p in data.get("poets", [])
+        ],
+        "externalPoets": [
+            {
+                "id": p["id"], "name": p["name"],
+                "poems": [_light_poem(pm) for pm in p.get("poems", [])],
+            }
+            for p in data.get("externalPoets", [])
+        ],
+    }
+
+
 def flat_poems(data):
     """كل القصائد (داخلية وخارجية) بشكل مسطّح، مع علم isExternal."""
     out = []
@@ -768,6 +818,11 @@ def main():
     responses_map = build_responses_map(all_poems)
 
     update_index_links(data)
+
+    LIGHT_INDEX_PATH.write_text(
+        json.dumps(build_light_index(data), ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
     POEMS_DIR.mkdir(exist_ok=True)
     POETS_DIR.mkdir(exist_ok=True)
