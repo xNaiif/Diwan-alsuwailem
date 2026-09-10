@@ -7,4 +7,4 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
 fi
 
-npm install -g ruflo@latest >/dev/null 2>&1 || true
+npm install -g ruflo@3.40.0 >/dev/null 2>&1 || true

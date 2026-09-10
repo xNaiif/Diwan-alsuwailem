@@ -2,10 +2,8 @@
   "mcpServers": {
     "claude-flow": {
       "type": "stdio",
-      "command": "npx",
+      "command": "ruflo",
       "args": [
-        "-y",
-        "ruflo@latest",
         "mcp",
         "start"
       ],
