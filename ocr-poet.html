@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>استخراج نصوص بالـ OCR — ديوان آل السويلم</title>
 <meta name="robots" content="noindex,nofollow"/>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'; worker-src 'self' blob:; connect-src 'self' https://api.ocr.space; base-uri 'self'; form-action 'none'"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self' https://api.ocr.space; base-uri 'self'; form-action 'none'"/>
 <link rel="icon" href="/favicon.ico" sizes="any"/>
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"/>
 <link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png"/>
@@ -72,13 +72,15 @@ summary::before{content:"⚙️ ";margin-left:4px}
 <body>
 
 <h1>ديوان آل السويلم</h1>
-<p class="hint">استخراج نصوص القصائد من صورة أو ملف PDF عبر OCR.space — النتيجة تظهر تحت صفحة بصفحة، وتقدر تنسخها أو تنزّلها</p>
+<p class="hint">استخراج نصوص القصائد من صورة عبر OCR.space — النتيجة تظهر تحت صفحة بصفحة، وتقدر تنسخها أو تنزّلها</p>
 
 <details id="settings-panel">
   <summary>إعدادات OCR.space</summary>
   <p class="warn-box">
-    ⚠️ <b>تنبيه أمني:</b> مفتاح الـ API يُخزَّن فقط داخل متصفحك على جهازك (localStorage) ويُرسل مباشرة لـ OCR.space فقط عند الاستخراج — ما يمر على أي سيرفر ثالث.
+    ⚠️ <b>تنبيه أمني وخصوصية:</b> مفتاح الـ API يُخزَّن فقط داخل متصفحك على جهازك (localStorage) ويُرسل مباشرة لـ OCR.space فقط عند الاستخراج — ما يمر على أي سيرفر ثالث.
     لا تحط مفتاحك على جهاز/متصفح عام أو مشترك. مفاتيح OCR.space المجانية مجانية بالأصل، فلا خطورة كبيرة لو تسرب، بس الأفضل ما تشاركه لأن أي حد يقدر يستهلك حصتك اليومية/الشهرية به.
+    <br><br>
+    📷 <b>مهم:</b> الصورة نفسها (مو بس المفتاح) تُرسل فعلياً لخدمة OCR.space الخارجية عشان تستخرج النص منها. تجنّب رفع صور فيها أي شي غير القصيدة (خط يد شخصي واضح، خلفية فيها تفاصيل خاصة، إلخ) لو ما تبي هالتفاصيل تصل لجهة خارجية.
   </p>
   <label>مفتاح OCR.space API</label>
   <input type="password" id="api-key" placeholder="مثال: K8xxxxxxxxxx" autocomplete="off"/>
@@ -110,7 +112,6 @@ summary::before{content:"⚙️ ";margin-left:4px}
     <li>حجم الصورة الأقصى للطلب: <b>1 ميجابايت</b> — الصفحة تضغط كل صورة/صفحة تلقائيًا تحت هذا الحد.</li>
     <li><b>Engine 3</b>: أقصى <b>60 طلب/ساعة</b> بالضبط (اكتشفناها عمليًا برسالة الخطأ — مو موثقة صراحة بالموقع الرسمي)، وحصة شهرية 2500 طلب.</li>
     <li><b>Engine 1 / Engine 2</b>: حصة شهرية أكبر (25000 طلب)، وحد عام معلن 500 طلب/يوم لكل عنوان IP — الحد بالساعة لهما غير مؤكد فنخليه بتأخير أقل احتياطًا.</li>
-    <li>لو رفعت PDF متعدد الصفحات مباشرة للـ API (بدون تحويله لصور)، الخطة المجانية تسمح بـ 3 صفحات بس — لذا هذي الصفحة تحوّل كل صفحة PDF لصورة مستقلة أولًا وترسلها لحالها، فتتفادى هذا القيد.</li>
     <li>إذا وصلك خطأ "Rate limit exceeded"، الصفحة توقف تلقائيًا وتكمل بعد الوقت المذكور بالخطأ (retryAfter) بدون ما تفقد الصفحات اللي خلصت.</li>
     <li>التقدّم يُحفظ أول بأول بمتصفحك (localStorage) — لو سكّرت الصفحة أو انقطع النت، ارجع ارفع نفس الملف وبيكمل من وين وقف.</li>
   </ul>
@@ -118,11 +119,11 @@ summary::before{content:"⚙️ ";margin-left:4px}
 
 <fieldset>
   <legend>الملف</legend>
-  <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="اختر ملف صورة أو PDF" onclick="document.getElementById('file-input').click()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('file-input').click();}">
-    <p>اضغط هنا أو اسحب صورة أو ملف PDF</p>
-    <p class="hint">JPG, PNG, أو PDF (أي عدد صفحات)</p>
+  <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="اختر ملف صورة" onclick="document.getElementById('file-input').click()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('file-input').click();}">
+    <p>اضغط هنا أو اسحب صورة</p>
+    <p class="hint">JPG أو PNG</p>
   </div>
-  <input type="file" id="file-input" accept="application/pdf,image/*" style="display:none"/>
+  <input type="file" id="file-input" accept="image/*" style="display:none"/>
   <div id="file-name"></div>
   <div class="actions-row">
     <button class="primary" id="start-btn" onclick="startExtraction()" disabled>🔍 ابدأ الاستخراج</button>
@@ -160,10 +161,7 @@ summary::before{content:"⚙️ ";margin-left:4px}
 
 <p class="site-credit">by <img class="naif-mark" src="/assets/naif-mark.png" alt="Naif" width="150" height="40" loading="lazy" decoding="async"/></p>
 
-<script src="js/vendor/pdf.min.js"></script>
 <script>
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'js/vendor/pdf.worker.min.js';
-
 const SETTINGS_KEY = 'ocr_poet_settings';
 const OCR_API_URL = 'https://api.ocr.space/parse/image';
 const MAX_FILE_SIZE = 1024*1024; // 1MB — حد الخطة المجانية
@@ -225,8 +223,8 @@ document.getElementById('file-input').addEventListener('change', e=>{
 function fileFingerprint(f){ return `${f.name}_${f.size}_${f.lastModified}`; }
 
 async function handleFile(f){
-  if(!f.type.startsWith('image/') && f.type!=='application/pdf'){
-    alert('لازم يكون الملف صورة أو PDF.'); return;
+  if(!f.type.startsWith('image/')){
+    alert('لازم يكون الملف صورة.'); return;
   }
   currentFile = f;
   currentFileKey = 'ocr_poet_results_' + fileFingerprint(f);
@@ -256,33 +254,10 @@ function clearSavedResults(){
   showRunStatus('تم مسح النتائج المحفوظة لهذا الملف ✓', 'ok');
 }
 
-/* ===== تحويل الملف لصفحات/صور مضغوطة تحت 1MB ===== */
+/* ===== تحويل الملف لصورة مضغوطة تحت 1MB ===== */
 async function fileToPageBlobs(f){
-  if(f.type==='application/pdf') return pdfToPageBlobs(f);
   const blob = await imageToCompressedBlob(await createImageBitmap(f));
   return [{num:1, blob}];
-}
-
-async function pdfToPageBlobs(f){
-  const buf = await f.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({data: buf, isEvalSupported: false}).promise;
-  const pages = [];
-  for(let i=1;i<=pdf.numPages;i++){
-    const page = await pdf.getPage(i);
-    const bitmap = await renderPdfPageToBitmap(page);
-    const blob = await imageToCompressedBlob(bitmap);
-    pages.push({num:i, blob});
-  }
-  return pages;
-}
-
-async function renderPdfPageToBitmap(page, scale=2.5){
-  const viewport = page.getViewport({scale});
-  const canvas = document.createElement('canvas');
-  canvas.width = viewport.width; canvas.height = viewport.height;
-  const ctx = canvas.getContext('2d');
-  await page.render({canvasContext:ctx, viewport}).promise;
-  return createImageBitmap(canvas);
 }
 
 /* يضغط الصورة (JPEG، جودة متناقصة، ثم دقة متناقصة) لين تنزل تحت حد 1MB */
@@ -465,16 +440,8 @@ async function retryPage(n){
   setPageStatus(n, 'pending', 'جاري المعالجة…');
   let targetBlob;
   try{
-    if(currentFile.type === 'application/pdf'){
-      const buf = await currentFile.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({data: buf, isEvalSupported: false}).promise;
-      const page = await pdf.getPage(n);
-      const bitmap = await renderPdfPageToBitmap(page);
-      targetBlob = await imageToCompressedBlob(bitmap);
-    } else {
-      const pages = await fileToPageBlobs(currentFile);
-      targetBlob = pages[0]?.blob;
-    }
+    const pages = await fileToPageBlobs(currentFile);
+    targetBlob = pages[0]?.blob;
   }
   catch(e){ showRunStatus('❌ '+e.message, 'err'); return; }
   if(!targetBlob) return;
