@@ -398,7 +398,7 @@ function rebuildPoetSelectors(){
   const currentPoetId = document.getElementById('poet-select')?.value;
 
   const pSel = document.getElementById('poet-select');
-  pSel.innerHTML = diwan.poets.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')
+  pSel.innerHTML = diwan.poets.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')
     + `<option value="__new__">+ إضافة شاعر جديد من آل السويلم</option>`;
   pSel.onchange = toggleNewPoetFields;
   if(currentPoetId && diwan.poets.some(p=>p.id===currentPoetId)) pSel.value = currentPoetId;
@@ -407,7 +407,7 @@ function rebuildPoetSelectors(){
   const usedWasms = diwan.poets.map(p=>p.wasm);
   const freeWasms = WASM_OPTIONS.filter(w=>!usedWasms.includes(w));
   document.getElementById('new-poet-wasm').innerHTML = freeWasms.length
-    ? freeWasms.map(w=>`<option value="${w}">${w}</option>`).join('')
+    ? freeWasms.map(w=>`<option value="${esc(w)}">${esc(w)}</option>`).join('')
     : `<option value="">لا يوجد وسم متاح</option>`;
 
   poemLookup = {};
@@ -415,12 +415,12 @@ function rebuildPoetSelectors(){
   diwan.poets.forEach(p=>p.poems.forEach(poem=>{
     const key = `${p.name} — ${poem.title}`;
     poemLookup[key] = poem.id;
-    opts += `<option value="${key}"></option>`;
+    opts += `<option value="${esc(key)}"></option>`;
   }));
   (diwan.externalPoets||[]).forEach(p=>p.poems.forEach(poem=>{
     const key = `${p.name} — ${poem.title} (خارجي)`;
     poemLookup[key] = poem.id;
-    opts += `<option value="${key}"></option>`;
+    opts += `<option value="${esc(key)}"></option>`;
   }));
   ['poem-datalist','edit-poem-datalist','delete-poem-datalist'].forEach(id=>{
     const dl = document.getElementById(id);
