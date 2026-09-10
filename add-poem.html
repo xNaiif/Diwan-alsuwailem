@@ -175,6 +175,8 @@ button.danger{background:#b3462c;border-color:#b3462c;color:#fff;font-weight:600
       <div><label>التاريخ (اختياري)</label><input type="text" id="poem-date"/></div>
       <div><label>المصدر (اختياري)</label><input type="text" id="poem-source" placeholder="تويتر، موقع الشعر…"/></div>
     </div>
+    <label>مناسبة القصيدة (اختياري)</label>
+    <textarea id="poem-occasion" placeholder="الحدث أو المناسبة اللي قيلت القصيدة على أثرها — اتركه فاضي لو ما تنطبق، ولن يظهر شيء بصفحة القصيدة" style="min-height:60px"></textarea>
   </fieldset>
 
   <!-- ================= الأبيات ================= -->
@@ -238,6 +240,8 @@ button.danger{background:#b3462c;border-color:#b3462c;color:#fff;font-weight:600
         <div><label>التاريخ</label><input type="text" id="edit-date"/></div>
         <div><label>المصدر</label><input type="text" id="edit-source"/></div>
       </div>
+      <label>مناسبة القصيدة (اختياري)</label>
+      <textarea id="edit-occasion" placeholder="الحدث أو المناسبة اللي قيلت القصيدة على أثرها — اتركه فاضي لو ما تنطبق، ولن يظهر شيء بصفحة القصيدة" style="min-height:60px"></textarea>
     </fieldset>
 
     <fieldset>
@@ -582,12 +586,15 @@ function buildPoemData(){
   const m = buildMujaratData();
   if(m==='invalid') return null;
 
+  const occasion = document.getElementById('poem-occasion').value.trim();
+
   if(addMode==='external'){
     const extName = document.getElementById('ext-poet-name').value.trim();
     if(!extName){ alert('لازم تكتب اسم الشاعر الخارجي.'); return null; }
     const result = {type:'external', poetName:extName, title, role:currentRole,
              date:document.getElementById('poem-date').value.trim(),
              source:document.getElementById('poem-source').value.trim(), verses};
+    if(occasion) result.occasion = occasion;
     if(m.mujarat) result.mujarat = m.mujarat;
     if(m.pendingExternal) result.pendingExternal = m.pendingExternal;
     return result;
@@ -603,6 +610,7 @@ function buildPoemData(){
                 date:document.getElementById('poem-date').value.trim(),
                 source:document.getElementById('poem-source').value.trim(), verses,
                 addedAt:new Date().toISOString().slice(0,10)};
+  if(occasion) poem.occasion = occasion;
   if(m.mujarat) poem.mujarat = m.mujarat;
   if(m.pendingExternal) poem.pendingExternal = m.pendingExternal;
 
@@ -647,6 +655,7 @@ function applyToLocalDiwan(data, diwanCopy){
     }
     const poem = {id:extPoet.id+'-poem-'+(extPoet.poems.length+1), title:data.title, role:data.role,
                   date:data.date, source:data.source};
+    if(data.occasion) poem.occasion = data.occasion;
     if(data.verses.length) poem.verses = data.verses;
     if(data.mujarat) poem.mujarat = data.mujarat;
     if(data.pendingExternal){
@@ -744,7 +753,7 @@ function copyOutput(){
   } else st.textContent='النص محدد — انسخ يدوياً.';
 }
 function resetForm(){
-  ['poem-title','poem-date','poem-source','ext-poet-name','paste-area',
+  ['poem-title','poem-date','poem-source','poem-occasion','ext-poet-name','paste-area',
    'mujarat-search','missing-poet-name','missing-poem-title','missing-poem-verses',
    'new-poet-name','new-poet-bio']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
@@ -796,6 +805,7 @@ function loadEditPoem(poemId){
   document.getElementById('edit-title').value = poem.title || '';
   document.getElementById('edit-date').value = poem.date || '';
   document.getElementById('edit-source').value = poem.source || '';
+  document.getElementById('edit-occasion').value = poem.occasion || '';
 
   const c = document.getElementById('edit-verses-container');
   c.innerHTML = '';
@@ -882,6 +892,7 @@ async function publishEdit(){
   if(!title){ alert('عنوان القصيدة لازم يبقى معبّى.'); return; }
   const date = document.getElementById('edit-date').value.trim();
   const source = document.getElementById('edit-source').value.trim();
+  const occasion = document.getElementById('edit-occasion').value.trim();
   const verses = [...document.querySelectorAll('#edit-verses-container .verse-row')]
     .map(r=>({sadr:r.querySelector('.edit-sadr-input').value.trim(), ajz:r.querySelector('.edit-ajz-input').value.trim()}))
     .filter(v=>v.sadr||v.ajz);
@@ -906,6 +917,7 @@ async function publishEdit(){
     found.poem.title = title;
     found.poem.date = date;
     found.poem.source = source;
+    if(occasion) found.poem.occasion = occasion; else delete found.poem.occasion;
     found.poem.verses = verses;
 
     let noteExtra = '';

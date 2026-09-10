@@ -46,7 +46,8 @@ function roleBadge(role) {
   return `<span class="${r.cls}">${r.text}</span>`;
 }
 
-const state = { data: null, activePoet: "all", query: "", responsesMap: {} };
+const GRID_PAGE_SIZE = 24;
+const state = { data: null, activePoet: "all", query: "", responsesMap: {}, visibleCount: GRID_PAGE_SIZE };
 
 const el = {
   subtitle:    document.getElementById("site-subtitle"),
@@ -387,6 +388,7 @@ function bindGlobalEvents() {
   });
   el.searchInput.addEventListener("input", (e) => {
     state.query = e.target.value.trim();
+    state.visibleCount = GRID_PAGE_SIZE;
     if (location.hash.startsWith("#poem=")) location.hash = "";
     renderGridView();
   });
@@ -398,6 +400,7 @@ function handleRoute() {
   const [key, value] = hash.split("=");
   if (key === "poem" && value) { showPoem(value); return; }
   state.activePoet = key === "poet" && value ? value : "all";
+  state.visibleCount = GRID_PAGE_SIZE;
   renderGridView();
 }
 
@@ -440,8 +443,21 @@ function renderGridView() {
     return;
   }
 
-  const cards = items.map(({ poet, poem }) => buildPoemCard(poet, poem)).join("");
-  el.poemsGrid.innerHTML = poemOfDay + recentSection + bioBanner + cards;
+  const visible = items.slice(0, state.visibleCount);
+  const cards = visible.map(({ poet, poem }) => buildPoemCard(poet, poem)).join("");
+  const showMoreBtn = items.length > state.visibleCount
+    ? `<p style="text-align:center;grid-column:1/-1;margin-top:6px">
+         <button type="button" class="show-all-btn" id="grid-show-more">عرض المزيد (${items.length - state.visibleCount} متبقية) ▾</button>
+       </p>`
+    : "";
+  el.poemsGrid.innerHTML = poemOfDay + recentSection + bioBanner + cards + showMoreBtn;
+  const moreBtn = document.getElementById("grid-show-more");
+  if (moreBtn) {
+    moreBtn.addEventListener("click", () => {
+      state.visibleCount += GRID_PAGE_SIZE * 2;
+      renderGridView();
+    });
+  }
 }
 
 function buildPoemCard(poet, poem) {

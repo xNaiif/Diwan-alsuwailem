@@ -18,7 +18,7 @@ from pathlib import Path
 
 SITE_URL = "https://diwan-alswilem.com"
 SITE_NAME = "ديوان آل السويلم"
-CSS_VERSION = "8"  # رفعه عند أي تعديل بـcss/style.css عشان يجبر المتصفحات تحمّل النسخة الجديدة
+CSS_VERSION = "9"  # رفعه عند أي تعديل بـcss/style.css عشان يجبر المتصفحات تحمّل النسخة الجديدة
 ROOT = Path(__file__).resolve().parent.parent  # جذر المستودع
 DATA_PATH = ROOT / "data" / "diwan.json"
 POEMS_DIR = ROOT / "poems"
@@ -204,6 +204,8 @@ def page_shell(title, description, canonical_url, body_html, json_ld="", robots=
   </p>
   <p class="site-credit">by <img class="naif-mark" src="/assets/naif-mark.png" alt="Naif" width="150" height="40" loading="lazy" decoding="async" /></p>
 </footer>
+<button id="back-to-top" aria-label="الرجوع لأعلى الصفحة">↑</button>
+<script src="/js/site-common.js"></script>
 </body>
 </html>"""
 
@@ -270,6 +272,7 @@ def poem_info_html(poet, poem):
     fields = [
         ("الشاعر", poet.get("name")),
         ("التاريخ", poem.get("date")),
+        ("المناسبة", poem.get("occasion")),
         ("البحر/الوزن", poem.get("meter")),
         ("النوع", ROLE_LABELS.get(poem.get("role"))),
         ("المصدر", poem.get("source")),
@@ -389,14 +392,22 @@ def build_poet_page(poet):
     description = real_bio(poet) or f'كل قصائد {poet["name"]} في {SITE_NAME}'
     breadcrumb_nav = breadcrumb_html(poet_breadcrumb_items(poet, canonical))
 
+    POET_PAGE_SIZE = 24
+    total_poems = len(poet.get("poems", []))
     cards = []
-    for poem in poet.get("poems", []):
+    for i, poem in enumerate(poet.get("poems", [])):
         first_verse = poem.get("verses", [{}])[0].get("sadr", "") if poem.get("verses") else ""
+        extra = i >= POET_PAGE_SIZE
         cards.append(f"""
-<a href="/poems/{esc(poem['id'])}.html" class="poem-card" style="display:block;text-decoration:none;margin-bottom:14px">
+<a href="/poems/{esc(poem['id'])}.html" class="poem-card{' poem-card-extra' if extra else ''}" style="display:block;text-decoration:none;margin-bottom:14px"{' hidden' if extra else ''}>
   <h2>{esc(poem["title"])}</h2>
   <p>{esc(first_verse)}</p>
 </a>""")
+    show_all_btn = (
+        f'<p style="text-align:center;margin-top:16px">'
+        f'<button type="button" class="show-all-btn">عرض كل القصائد ({total_poems}) ▾</button></p>'
+        if total_poems > POET_PAGE_SIZE else ""
+    )
 
     photo_html = (
         f'<img src="{esc(poet["photo"])}" alt="{esc("صورة الشاعر " + poet["name"])}" width="52" height="52" '
@@ -416,8 +427,9 @@ def build_poet_page(poet):
   <div><h1>{esc(poet["name"])}</h1></div>
 </div>
 {bio_section}
-<span class="section-label">قصائد الشاعر ({len(poet.get("poems", []))})</span>
+<span class="section-label">قصائد الشاعر ({total_poems})</span>
 <div class="poems-grid">{"".join(cards)}</div>
+{show_all_btn}
 <p style="text-align:center;margin-top:20px"><a href="/poets/" style="color:var(--gold)">تصفّح كل شعراء الديوان ←</a></p>"""
 
     return poet["id"] + ".html", page_shell(title, description, canonical, body, poet_json_ld(poet, canonical))
