@@ -20,7 +20,7 @@ from urllib.parse import quote
 
 SITE_URL = "https://diwan-alswilem.com"
 SITE_NAME = "ديوان آل السويلم"
-CSS_VERSION = "12"  # رفعه عند أي تعديل بـcss/style.css عشان يجبر المتصفحات تحمّل النسخة الجديدة
+CSS_VERSION = "13"  # رفعه عند أي تعديل بـcss/style.css عشان يجبر المتصفحات تحمّل النسخة الجديدة
 SITE_COMMON_JS_VERSION = "2"  # نفس فكرة CSS_VERSION، لـjs/site-common.js (لم يكن له ترقيم كاش سابقاً)
 ROOT = Path(__file__).resolve().parent.parent  # جذر المستودع
 DATA_PATH = ROOT / "data" / "diwan.json"

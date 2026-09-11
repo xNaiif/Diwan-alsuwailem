@@ -94,7 +94,7 @@ const state = { data: null, activePoet: "all", query: "", responsesMap: {}, visi
 
 const el = {
   subtitle:    document.getElementById("site-subtitle"),
-  wasmLegend:  document.getElementById("wasm-legend"),
+  heroStats:   document.getElementById("hero-stats"),
   filterPills: document.getElementById("filter-pills"),
   searchInput: document.getElementById("search-input"),
   poemsGrid:   document.getElementById("poems-grid"),
@@ -121,7 +121,7 @@ async function init() {
   if (el.footerNote) el.footerNote.textContent = state.data.site.footerNote || "";
   state.allPoemsFlat = getAllPoemsFlat();
   state.responsesMap = buildResponsesMap();
-  renderWasmLegend();
+  renderHeroStats();
   renderFilterPills();
   bindGlobalEvents();
   handleRoute();
@@ -404,13 +404,18 @@ function buildResponsesMap() {
   return map;
 }
 
-function renderWasmLegend() {
-  el.wasmLegend.innerHTML = state.data.poets.map(poet =>
-    `<button class="wasm-legend-item" data-poet="${esc(poet.id)}" aria-label="عرض قصائد ${esc(poet.name)}">
-      ${poetMark(poet, "width:40px;height:40px;")}
-      <span>${esc(poet.name)}</span>
-    </button>`
-  ).join("");
+/* أرقام حقيقية محسوبة من البيانات المحمَّلة فعلياً (لا أرقام ثابتة بالكود) — تظهر صحيحة
+   حتى بالمرحلة ١ (الفهرس الخفيف) لأن عدد القصائد/الشعراء موجود فيه كاملاً، فقط محتوى
+   الأبيات مصغَّر لا العدّاد نفسه. */
+function renderHeroStats() {
+  const totalPoems = state.allPoemsFlat.length;
+  const totalPoets = state.data.poets.length + (state.data.externalPoets || []).length;
+  const totalResponses = state.allPoemsFlat.filter(({ poem }) => poem.role === "رد" || poem.role === "مجاراة").length;
+  el.heroStats.innerHTML = `
+    <div class="stat"><span class="stat-n">${totalPoems}</span><span class="stat-l">قصيدة</span></div>
+    <div class="stat"><span class="stat-n">${totalPoets}</span><span class="stat-l">شاعر</span></div>
+    <div class="stat"><span class="stat-n">${totalResponses}</span><span class="stat-l">رد ومجاراة</span></div>
+  `;
 }
 
 function renderFilterPills() {
