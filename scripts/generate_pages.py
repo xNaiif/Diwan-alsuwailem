@@ -21,6 +21,7 @@ from urllib.parse import quote
 SITE_URL = "https://diwan-alswilem.com"
 SITE_NAME = "ديوان آل السويلم"
 CSS_VERSION = "12"  # رفعه عند أي تعديل بـcss/style.css عشان يجبر المتصفحات تحمّل النسخة الجديدة
+SITE_COMMON_JS_VERSION = "2"  # نفس فكرة CSS_VERSION، لـjs/site-common.js (لم يكن له ترقيم كاش سابقاً)
 ROOT = Path(__file__).resolve().parent.parent  # جذر المستودع
 DATA_PATH = ROOT / "data" / "diwan.json"
 POEMS_DIR = ROOT / "poems"
@@ -285,7 +286,7 @@ def page_shell(title, description, canonical_url, body_html, json_ld="", robots=
   <p class="site-credit">by <img class="naif-mark" src="/assets/naif-mark.png" alt="Naif" width="150" height="40" loading="lazy" decoding="async" /></p>
 </footer>
 <button id="back-to-top" aria-label="الرجوع لأعلى الصفحة">↑</button>
-<script src="/js/site-common.js"></script>
+<script src="/js/site-common.js?v={SITE_COMMON_JS_VERSION}"></script>
 </body>
 </html>"""
 
@@ -351,11 +352,19 @@ REPORT_EMAIL = "27.vines-myopic@icloud.com"
 
 
 def report_issue_html(poet, poem, canonical):
-    """رابط صغير أسفل كل قصيدة يفتح mailto معبّأ مسبقاً — يطابق reportIssueHtml بـjs/app.js."""
-    subject = f"إبلاغ عن قصيدة: {poem['title']}"
-    body = f"القصيدة: {poem['title']}\nالشاعر: {poet.get('name', '')}\nالرابط: {canonical}\n\nالملاحظة:\n"
-    href = f"mailto:{REPORT_EMAIL}?subject={quote(subject)}&body={quote(body)}"
-    return f'<a class="report-issue" href="{esc(href)}">🚩 لاحظت خطأ أو نقص بهذي القصيدة؟ أبلغني</a>'
+    """رابط صغير أسفل كل قصيدة يفتح mailto معبّأ مسبقاً — يطابق reportIssueHtml بـjs/app.js.
+    الإيميل مقسَّم (user/domain) بدل مكتوب كاملاً بالـHTML، والموضوع/النص مُشفَّران مسبقاً
+    (quote) — يبنيها فعلياً js/site-common.js وقت الضغط فقط، عشان أي حاصد إيميلات آلي
+    (bot) يقرأ HTML/JS الثابت مباشرة ما يلقى سلسلة "user@domain" متصلة بأي مكان."""
+    subject = quote(f"إبلاغ عن قصيدة: {poem['title']}")
+    body = quote(f"القصيدة: {poem['title']}\nالشاعر: {poet.get('name', '')}\nالرابط: {canonical}\n\nالملاحظة:\n")
+    user, domain = REPORT_EMAIL.split("@", 1)
+    return (
+        f'<a class="report-issue" href="#" data-report-link '
+        f'data-u="{esc(user)}" data-d="{esc(domain)}" '
+        f'data-subject="{esc(subject)}" data-body="{esc(body)}">'
+        f'🚩 لاحظت خطأ أو نقص بهذي القصيدة؟ أبلغني</a>'
+    )
 
 
 def poem_info_html(poet, poem, role_labels):

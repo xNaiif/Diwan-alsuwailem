@@ -72,17 +72,21 @@ function poemInfoHtml(poet, poem) {
   return rows ? `<dl class="poem-info">${rows}</dl>` : "";
 }
 
-const REPORT_EMAIL = "27.vines-myopic@icloud.com";
+const REPORT_EMAIL_USER = "27.vines-myopic";
+const REPORT_EMAIL_DOMAIN = "icloud.com";
 
 /* رابط إبلاغ صغير أسفل كل قصيدة — يطابق report_issue_html() بـscripts/generate_pages.py.
-   الرابط دايماً يشير لصفحة القصيدة الثابتة الأصلية (مو للـSPA) عشان يوصل نفس الرابط
-   بغض النظر عن الطريقة اللي فُتحت فيها القصيدة. */
+   الإيميل مقسَّم (user/domain) بدل مكتوب كاملاً بالـHTML/JS، ويُبنى الرابط الفعلي فقط وقت
+   الضغط (نفس معالج data-report-link بـjs/site-common.js) — عشان أي حاصد إيميلات آلي يقرأ
+   هذا الملف مباشرة ما يلقى سلسلة "user@domain" متصلة. الرابط دايماً يشير لصفحة القصيدة
+   الثابتة الأصلية (مو للـSPA) عشان يوصل نفس الرابط بغض النظر عن طريقة فتح القصيدة. */
 function reportIssueHtml(poet, poem) {
   const canonical = `${location.origin}/poems/${poem.id}.html`;
-  const subject = `إبلاغ عن قصيدة: ${poem.title}`;
-  const body = `القصيدة: ${poem.title}\nالشاعر: ${poet.name || ""}\nالرابط: ${canonical}\n\nالملاحظة:\n`;
-  const href = `mailto:${REPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  return `<a class="report-issue" href="${esc(href)}">🚩 لاحظت خطأ أو نقص بهذي القصيدة؟ أبلغني</a>`;
+  const subject = encodeURIComponent(`إبلاغ عن قصيدة: ${poem.title}`);
+  const body = encodeURIComponent(`القصيدة: ${poem.title}\nالشاعر: ${poet.name || ""}\nالرابط: ${canonical}\n\nالملاحظة:\n`);
+  return `<a class="report-issue" href="#" data-report-link
+    data-u="${esc(REPORT_EMAIL_USER)}" data-d="${esc(REPORT_EMAIL_DOMAIN)}"
+    data-subject="${esc(subject)}" data-body="${esc(body)}">🚩 لاحظت خطأ أو نقص بهذي القصيدة؟ أبلغني</a>`;
 }
 
 const GRID_PAGE_SIZE = 24;
@@ -424,6 +428,13 @@ function renderFilterPills() {
 
 function bindGlobalEvents() {
   document.addEventListener("click", (e) => {
+    const reportLink = e.target.closest("[data-report-link]");
+    if (reportLink) {
+      e.preventDefault();
+      const addr = `${reportLink.dataset.u}@${reportLink.dataset.d}`;
+      location.href = `mailto:${addr}?subject=${reportLink.dataset.subject}&body=${reportLink.dataset.body}`;
+      return;
+    }
     const verseEl = e.target.closest(".verse-selectable");
     if (verseEl) {
       toggleVerseSelect(verseEl);
