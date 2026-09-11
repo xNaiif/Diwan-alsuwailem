@@ -288,6 +288,10 @@ main{position:relative;z-index:1;max-width:var(--container);margin:0 auto;paddin
 .poem-info dt{font-weight:600;color:var(--text-muted);margin:0}
 .poem-info dd{margin:0}
 
+/* رابط إبلاغ صغير جداً أسفل كل قصيدة — ما يؤثر على تصميم الصفحة إطلاقاً */
+.report-issue{display:block;text-align:center;margin-top:18px;font-size:.76rem;color:var(--text-faint-accessible,var(--text-faint));text-decoration:none;opacity:.75}
+.report-issue:hover{color:var(--gold);opacity:1}
+
 /* ---------- قصائد أخرى لنفس الشاعر ---------- */
 .related-poems{max-width:680px;margin:22px auto 0}
 .related-poems ul{list-style:none;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:6px}

@@ -72,6 +72,19 @@ function poemInfoHtml(poet, poem) {
   return rows ? `<dl class="poem-info">${rows}</dl>` : "";
 }
 
+const REPORT_EMAIL = "27.vines-myopic@icloud.com";
+
+/* رابط إبلاغ صغير أسفل كل قصيدة — يطابق report_issue_html() بـscripts/generate_pages.py.
+   الرابط دايماً يشير لصفحة القصيدة الثابتة الأصلية (مو للـSPA) عشان يوصل نفس الرابط
+   بغض النظر عن الطريقة اللي فُتحت فيها القصيدة. */
+function reportIssueHtml(poet, poem) {
+  const canonical = `${location.origin}/poems/${poem.id}.html`;
+  const subject = `إبلاغ عن قصيدة: ${poem.title}`;
+  const body = `القصيدة: ${poem.title}\nالشاعر: ${poet.name || ""}\nالرابط: ${canonical}\n\nالملاحظة:\n`;
+  const href = `mailto:${REPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  return `<a class="report-issue" href="${esc(href)}">🚩 لاحظت خطأ أو نقص بهذي القصيدة؟ أبلغني</a>`;
+}
+
 const GRID_PAGE_SIZE = 24;
 const state = { data: null, activePoet: "all", query: "", responsesMap: {}, visibleCount: GRID_PAGE_SIZE, allPoemsFlat: null, fullyLoaded: false };
 
@@ -711,6 +724,7 @@ function buildChainView(backBtn, origFound, resp, responsesSection) {
       </div>
     </div>
     ${poemInfoHtml(respPoet, respPoem)}
+    ${reportIssueHtml(respPoet, respPoem)}
     ${responsesSection}`;
 }
 
@@ -728,5 +742,6 @@ function buildNormalView(backBtn, poet, poem, isExternal, responsesSection) {
     </div>
     <div class="verses">${versesHtml}</div>
     ${poemInfoHtml(poet, poem)}
+    ${reportIssueHtml(poet, poem)}
     ${responsesSection}`;
 }

@@ -16,10 +16,11 @@ import html
 import sys
 import datetime
 from pathlib import Path
+from urllib.parse import quote
 
 SITE_URL = "https://diwan-alswilem.com"
 SITE_NAME = "ديوان آل السويلم"
-CSS_VERSION = "11"  # رفعه عند أي تعديل بـcss/style.css عشان يجبر المتصفحات تحمّل النسخة الجديدة
+CSS_VERSION = "12"  # رفعه عند أي تعديل بـcss/style.css عشان يجبر المتصفحات تحمّل النسخة الجديدة
 ROOT = Path(__file__).resolve().parent.parent  # جذر المستودع
 DATA_PATH = ROOT / "data" / "diwan.json"
 POEMS_DIR = ROOT / "poems"
@@ -346,6 +347,17 @@ def poet_json_ld(poet, canonical_url):
     return ld_scripts(data, breadcrumb)
 
 
+REPORT_EMAIL = "27.vines-myopic@icloud.com"
+
+
+def report_issue_html(poet, poem, canonical):
+    """رابط صغير أسفل كل قصيدة يفتح mailto معبّأ مسبقاً — يطابق reportIssueHtml بـjs/app.js."""
+    subject = f"إبلاغ عن قصيدة: {poem['title']}"
+    body = f"القصيدة: {poem['title']}\nالشاعر: {poet.get('name', '')}\nالرابط: {canonical}\n\nالملاحظة:\n"
+    href = f"mailto:{REPORT_EMAIL}?subject={quote(subject)}&body={quote(body)}"
+    return f'<a class="report-issue" href="{esc(href)}">🚩 لاحظت خطأ أو نقص بهذي القصيدة؟ أبلغني</a>'
+
+
 def poem_info_html(poet, poem, role_labels):
     """كتلة دلالية (dl) بمعلومات القصيدة — تعرض فقط الحقول المتوفرة فعلياً، بدون أي اختلاق بيانات."""
     fields = [
@@ -388,6 +400,7 @@ def build_poem_page(item, all_poems, responses_map, role_labels):
 
     breadcrumb_nav = breadcrumb_html(poem_breadcrumb_items(poet, poem, is_external, canonical))
     info_html = poem_info_html(poet, poem, role_labels)
+    report_html = report_issue_html(poet, poem, canonical)
     related_html = related_poems_html(poet, poem, is_external)
 
     is_chain = poem.get("role") in ("رد", "مجاراة") and (poem.get("mujarat") or {}).get("respondingToId")
@@ -446,6 +459,7 @@ def build_poem_page(item, all_poems, responses_map, role_labels):
   </div>
 </div>
 {info_html}
+{report_html}
 {responses_html}
 {related_html}"""
     else:
@@ -464,6 +478,7 @@ def build_poem_page(item, all_poems, responses_map, role_labels):
 </div>
 {f'<div class="verses">{verses_html}</div>' if verses_html else '<p style="text-align:center;color:var(--text-faint)">لم تُحفظ أبيات هذه القصيدة في الديوان بعد</p>'}
 {info_html}
+{report_html}
 {responses_html}
 {related_html}"""
 
