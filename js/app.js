@@ -26,18 +26,31 @@ function wasmIcon(wasmId, extraStyle) {
   return svg.replace("<svg ", `<svg style="color:var(--gold);${extraStyle || ""}" `);
 }
 
+/* الحرف الأول من اسم الشاعر — بديل بصري أوضح من رمز "▲" العام لشاعر بلا صورة ولا أيقونة wasm بعد. */
+function poetAvatarInitial(name) {
+  const trimmed = String(name || "").trim();
+  return trimmed ? trimmed.charAt(0) : "؟";
+}
+
+/* إطار "هوية الشاعر" الموحّد — صورة حقيقية / أيقونة تأسيسية wasm / الحرف الأول، الثلاثة
+   داخل نفس الإطار الدائري (.poet-avatar بـcss/style.css) بحجم واحد قابل للتحكّم عبر
+   sizeStyle، عشان الحالات الثلاث تُقرأ كنفس نوع العنصر بحالة تعبئة مختلفة فقط.
+   يطابق poet_icon_html() بـscripts/generate_pages.py حرفياً — أي تعديل هنا يتطلب نفس
+   التعديل هناك. */
 function poetMark(poet, sizeStyle) {
   const style = sizeStyle || "width:34px;height:34px;";
-  if (poet.photo) {
-    return `<img src="${esc(poet.photo)}" class="poet-photo" style="${style}" alt="${esc(poet.name)}" loading="lazy" decoding="async" />`;
-  }
-  if (WASM_ICONS[poet.wasm]) {
-    return wasmIcon(poet.wasm, style);
-  }
   const widthMatch = /width:\s*(\d+(?:\.\d+)?)px/.exec(style);
   const w = widthMatch ? parseFloat(widthMatch[1]) : 34;
-  const fontSize = Math.max(0.6, w * 0.028).toFixed(2) + "rem";
-  return `<span class="poet-photo-placeholder" style="${style}font-size:${fontSize}" title="بانتظار إضافة صورة الشاعر">▲</span>`;
+
+  if (poet.photo) {
+    return `<span class="poet-avatar has-photo" style="${style}"><img src="${esc(poet.photo)}" class="poet-photo" alt="${esc(poet.name)}" loading="lazy" decoding="async" /></span>`;
+  }
+  if (WASM_ICONS[poet.wasm]) {
+    const iconSize = (w * 0.56).toFixed(1);
+    return `<span class="poet-avatar has-wasm" style="${style}" aria-hidden="true">${wasmIcon(poet.wasm, `width:${iconSize}px;height:${iconSize}px;`)}</span>`;
+  }
+  const fontSize = (Math.max(0.5, (w * 0.42) / 16)).toFixed(2) + "rem";
+  return `<span class="poet-avatar has-placeholder" style="${style}" title="بانتظار إضافة صورة الشاعر"><span class="poet-initial" style="font-size:${fontSize}" aria-hidden="true">${esc(poetAvatarInitial(poet.name))}</span></span>`;
 }
 
 const ROLE_LABELS = {

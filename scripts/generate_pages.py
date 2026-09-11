@@ -20,7 +20,7 @@ from urllib.parse import quote
 
 SITE_URL = "https://diwan-alswilem.com"
 SITE_NAME = "ديوان آل السويلم"
-CSS_VERSION = "13"  # رفعه عند أي تعديل بـcss/style.css عشان يجبر المتصفحات تحمّل النسخة الجديدة
+CSS_VERSION = "14"  # رفعه عند أي تعديل بـcss/style.css عشان يجبر المتصفحات تحمّل النسخة الجديدة
 SITE_COMMON_JS_VERSION = "2"  # نفس فكرة CSS_VERSION، لـjs/site-common.js (لم يكن له ترقيم كاش سابقاً)
 ROOT = Path(__file__).resolve().parent.parent  # جذر المستودع
 DATA_PATH = ROOT / "data" / "diwan.json"
@@ -34,6 +34,17 @@ POETS_DIR = ROOT / "poets"
 # (الخاص بالتنسيق/الـCSS classes، مو النصوص) في js/app.js
 ROLE_BADGE_TEXT = {"بدع": "بدع", "رد": "ردّ", "مجاراة": "مجاراة"}
 
+# أيقونات الشعراء المؤسِّسين بلا صورة (رمز/مونوغرام هندسي) — نسخة مطابقة حرفياً لـ
+# WASM_ICONS بـjs/app.js. لا يوجد أي شاعر حالياً بدون صورة وله wasm (كل من عنده wasm
+# عنده صورة أيضاً فالصورة تُقدَّم دائماً)، لكن نُبقيها متطابقة لمنع أي انحراف مستقبلي.
+WASM_ICONS = {
+    "wasm-1": '<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"> <line x1="20" y1="6" x2="20" y2="34" /> <line x1="11" y1="11" x2="29" y2="11" /> </svg>',
+    "wasm-2": '<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"> <circle cx="20" cy="20" r="9" /> <line x1="5" y1="20" x2="35" y2="20" /> </svg>',
+    "wasm-3": '<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"> <line x1="9" y1="9" x2="31" y2="31" /> <line x1="9" y1="31" x2="31" y2="9" /> <circle cx="20" cy="20" r="3.2" fill="currentColor" stroke="none" /> </svg>',
+    "wasm-4": '<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"> <polygon points="20,7 33,30 7,30" /> </svg>',
+    "wasm-5": '<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"> <polyline points="6,28 14,12 20,28 26,12 34,28" /> </svg>',
+}
+
 
 def role_badge_html(role):
     """شارة النوع الملوّنة — تطابق roleBadge() في js/app.js (نفس CSS classes بـcss/style.css)."""
@@ -42,19 +53,38 @@ def role_badge_html(role):
     return f'<span class="role-badge role-{esc(role)}">{esc(ROLE_BADGE_TEXT[role])}</span>'
 
 
+def poet_avatar_initial(name):
+    """الحرف الأول من اسم الشاعر — بديل بصري أوضح من رمز '▲' العام لشاعر بلا صورة ولا أيقونة
+    wasm بعد. يطابق poetAvatarInitial() بـjs/app.js."""
+    trimmed = (name or "").strip()
+    return trimmed[0] if trimmed else "؟"
+
+
 def poet_icon_html(poet, size=44):
-    """صورة/شارة الشاعر بحجم مربّع — نفس منطق poetMark() بـjs/app.js وpoet-photo-placeholder
-    المستخدم أصلاً بهذا الملف (build_poet_page / build_poets_index_page)."""
+    """إطار 'هوية الشاعر' الموحّد بحجم مربّع (دائري فعلياً عبر CSS) — صورة حقيقية / أيقونة
+    تأسيسية wasm / الحرف الأول، نفس منطق poetMark() بـjs/app.js حرفياً (.poet-avatar
+    بـcss/style.css). مرجع وحيد بهذا الملف — build_poem_page/build_poet_page/
+    build_poets_index_page كلها تستدعيه بدل تكرار نفس المنطق."""
     if poet.get("photo"):
-        return (
+        inner = (
             f'<img src="{esc(poet["photo"])}" class="poet-photo" alt="{esc(poet["name"])}" '
-            f'style="width:{size}px;height:{size}px;border-radius:50%;object-fit:cover" '
             f'loading="lazy" decoding="async" />'
         )
-    font_size = max(0.6, size * 0.028)
+        return f'<span class="poet-avatar has-photo" style="width:{size}px;height:{size}px">{inner}</span>'
+
+    if WASM_ICONS.get(poet.get("wasm")):
+        icon_size = round(size * 0.56, 1)
+        svg = WASM_ICONS[poet["wasm"]].replace(
+            "<svg ", f'<svg style="width:{icon_size}px;height:{icon_size}px;color:var(--gold)" ', 1
+        )
+        return f'<span class="poet-avatar has-wasm" style="width:{size}px;height:{size}px" aria-hidden="true">{svg}</span>'
+
+    font_size = max(0.5, (size * 0.42) / 16)
+    initial = esc(poet_avatar_initial(poet.get("name")))
+    inner = f'<span class="poet-initial" style="font-size:{font_size:.2f}rem" aria-hidden="true">{initial}</span>'
     return (
-        f'<span class="poet-photo-placeholder" style="width:{size}px;height:{size}px;'
-        f'font-size:{font_size:.2f}rem" title="بانتظار إضافة صورة الشاعر">▲</span>'
+        f'<span class="poet-avatar has-placeholder" style="width:{size}px;height:{size}px" '
+        f'title="بانتظار إضافة صورة الشاعر">{inner}</span>'
     )
 
 
@@ -521,13 +551,7 @@ def build_poet_page(poet):
         if total_poems > POET_PAGE_SIZE else ""
     )
 
-    photo_html = (
-        f'<img src="{esc(poet["photo"])}" alt="{esc("صورة الشاعر " + poet["name"])}" width="52" height="52" '
-        f'style="width:52px;height:52px;border-radius:50%;object-fit:cover" loading="lazy" decoding="async" />'
-        if poet.get("photo") else
-        '<span class="poet-photo-placeholder" style="width:52px;height:52px;font-size:1.3rem" '
-        'title="بانتظار إضافة صورة الشاعر">▲</span>'
-    )
+    photo_html = poet_icon_html(poet, 52)
     bio_section = (
         f'<span class="section-label">نبذة عن الشاعر</span><p style="max-width:680px;margin:0 auto;color:var(--text-muted)">{esc(poet["bio"])}</p>'
         if poet.get("bio") else ""
@@ -558,11 +582,7 @@ def build_poets_index_page(data):
     poets = data.get("poets", [])
     cards = []
     for poet in poets:
-        photo_html = (
-            f'<img src="{esc(poet["photo"])}" alt="{esc("صورة الشاعر " + poet["name"])}" loading="lazy" decoding="async" />'
-            if poet.get("photo") else
-            '<span class="poet-photo-placeholder" title="بانتظار إضافة صورة الشاعر">▲</span>'
-        )
+        photo_html = poet_icon_html(poet, 48)
         bio_snippet = esc(poet.get("bio", ""))
         count = len(poet.get("poems", []))
         cards.append(f"""

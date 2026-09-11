@@ -72,6 +72,21 @@ img,svg{display:block}
 .filter-bar.compact .pill svg{width:12px;height:12px}
 .filter-bar.compact #search-input{font-size:.8rem;padding:4px 2px}
 
+/* على الجوال: شريط الفلاتر يتحوّل لشريط أفقي قابل للتمرير بدل تكديس ~٩ أزرار عمودياً
+   قبل صندوق البحث — يبقى صندوق البحث ظاهر دايماً بأعلى الصفحة بدون تمرير إضافي */
+@media(max-width:640px){
+  .filter-bar-inner{flex-direction:column;align-items:stretch;gap:10px}
+  .filter-pills{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x proximity;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;
+    min-width:0;max-width:100%;
+    margin:0 -20px;padding:0 20px 2px;
+    mask-image:linear-gradient(to left,transparent,#000 20px,#000 calc(100% - 20px),transparent);
+    -webkit-mask-image:linear-gradient(to left,transparent,#000 20px,#000 calc(100% - 20px),transparent)}
+  .filter-pills::-webkit-scrollbar{display:none}
+  .filter-pills .pill{flex:0 0 auto;scroll-snap-align:start}
+  .search-wrap{flex:0 0 auto;min-width:0;max-width:none;width:100%}
+}
+
 /* ---------- المحتوى ---------- */
 main{position:relative;z-index:1;max-width:var(--container);margin:0 auto;padding:40px 20px 80px}
 .hidden{display:none!important}
@@ -80,7 +95,6 @@ main{position:relative;z-index:1;max-width:var(--container);margin:0 auto;paddin
 .show-all-btn{cursor:pointer;background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:999px;padding:10px 26px;font-size:.9rem;font-family:inherit;transition:border-color .18s ease,color .18s ease}
 .show-all-btn:hover{border-color:var(--ember);color:var(--ember)}
 .poet-bio-banner{grid-column:1/-1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 26px;margin-bottom:10px;display:flex;gap:18px;align-items:flex-start}
-.poet-bio-banner svg{width:40px;height:40px;flex-shrink:0;margin-top:4px}
 .poet-bio-banner h1,
 .poet-bio-banner h2{margin:0 0 6px;font-family:var(--font-display);font-size:1.5rem}
 .poet-bio-banner p{margin:0;color:var(--text-muted);font-size:.95rem}
@@ -129,7 +143,9 @@ main{position:relative;z-index:1;max-width:var(--container);margin:0 auto;paddin
 .mujarat-responses{display:flex;flex-wrap:wrap;gap:8px}
 
 /* ---------- التذييل ---------- */
-.site-footer{position:relative;z-index:1;text-align:center;padding:28px 20px 40px;color:var(--text-faint);font-size:.85rem;border-top:1px solid var(--border)}
+/* درجة خلفية أغمق قليلاً من باقي الصفحة (لا تدرّج فاقع) — كسر بسيط للرتابة البصرية
+   بين الشبكة والتذييل بدل خلفية مسطحة موحّدة على طول الصفحة */
+.site-footer{position:relative;z-index:1;text-align:center;padding:28px 20px 40px;color:var(--text-faint);font-size:.85rem;border-top:1px solid var(--border);background:linear-gradient(180deg,transparent,rgba(0,0,0,.16))}
 .site-footer .footer-note{display:block;margin-top:6px;color:var(--text-faint-accessible)}
 .site-credit{margin:16px 0 0;padding-left:58px;text-align:left;direction:ltr;font-size:.72rem;letter-spacing:.02em;color:var(--text-faint-accessible);transition:color .2s ease}
 .site-credit:hover{color:var(--text-muted)}
@@ -198,11 +214,35 @@ main{position:relative;z-index:1;max-width:var(--container);margin:0 auto;paddin
 }
 
 
-/* ---------- صور الشعراء (بديل الوسوم) ---------- */
-.poet-photo {
-  object-fit: contain;
-  display: inline-block;
+/* ---------- هوية الشاعر: إطار دائري موحّد ----------
+   نفس "الإطار" بكل الحالات الثلاث (صورة حقيقية / أيقونة تأسيسية wasm / الحرف الأول) —
+   تُقرأ كنفس نوع العنصر بحالة تعبئة مختلفة، مو كثلاث واجهات مختلفة. يُبنى دائماً عبر
+   poetMark() بـjs/app.js أو poet_icon_html() بـscripts/generate_pages.py — لا تُبنِ
+   إطار شاعر يدوياً بمكان ثالث. */
+.poet-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+}
+.poet-avatar.has-placeholder { cursor: help; }
+.poet-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.poet-avatar svg { display: block; }
+.poet-initial {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1;
+  user-select: none;
 }
 
 
@@ -300,9 +340,6 @@ main{position:relative;z-index:1;max-width:var(--container);margin:0 auto;paddin
 .poets-index-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-top:20px}
 .poets-index-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;display:flex;gap:14px;align-items:flex-start;text-decoration:none;color:inherit;transition:border-color .18s ease,transform .18s ease}
 .poets-index-card:hover{border-color:var(--ember);transform:translateY(-2px)}
-.poets-index-card img{width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0}
-.poets-index-card .poet-photo-placeholder{width:48px;height:48px;font-size:1.1rem}
-.poet-photo-placeholder{display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--surface-2);border:1px dashed var(--border);color:var(--ember);flex-shrink:0;cursor:help}
 .poets-index-card h2{margin:0 0 4px;font-family:var(--font-display);font-size:1.15rem;color:var(--text)}
 .poets-index-card p{margin:0;color:var(--text-muted);font-size:.85rem;line-height:1.5}
 
